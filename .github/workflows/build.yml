@@ -30,7 +30,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
 
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
@@ -46,21 +46,9 @@ jobs:
       - name: Install frontend dependencies
         run: npm install
 
-      - name: Build Tauri app
+      - name: Build with tauri-action
         uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           releaseId: ${{ github.event.release.id }}
-
-      - name: Upload artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: installers-${{ matrix.platform }}
-          path: |
-            src-tauri/target/release/bundle/**/*.msi
-            src-tauri/target/release/bundle/**/*.exe
-            src-tauri/target/release/bundle/**/*.deb
-            src-tauri/target/release/bundle/**/*.AppImage
-            src-tauri/target/release/bundle/**/*.dmg
-            src-tauri/target/release/bundle/**/*.app.tar.gz
