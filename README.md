@@ -4,7 +4,6 @@
 
 Cross-platform DNS management and optimization desktop app for Windows, Linux, and macOS.
 
-[![Version](https://img.shields.io/badge/version-0.1.0-ff6b35?style=flat-square)](https://github.com/Code-Leafy/SparkDns)
 [![Rust](https://img.shields.io/badge/rust-1.70+-ff6b35?style=flat-square)](https://rust-lang.org)
 [![Tauri](https://img.shields.io/badge/tauri-2.x-ff6b35?style=flat-square)](https://tauri.app)
 [![License](https://img.shields.io/badge/license-MIT-ff6b35?style=flat-square)](https://github.com/Code-Leafy/SparkDns/blob/main/LICENSE)
@@ -33,7 +32,7 @@ SparkDns is a lightweight, native desktop application for managing and optimizin
 ### Core Features
 
 #### ⚡ One-Click DNS Switching
-Switch between pre-configured DNS providers (Cloudflare, Google, Quad9, AdGuard, Mullvad, OpenDNS) or create custom profiles with IPv4/IPv6 support.
+Switch between pre-configured DNS providers or create custom profiles with IPv4/IPv6 support.
 
 #### 🔍 Real-Time Diagnostics
 Run comprehensive DNS diagnostics with latency testing, DNSSEC validation, leak detection, and reachability probes against configurable targets.
@@ -49,6 +48,30 @@ Backup and restore your DNS configuration with JSON export/import.
 
 #### 🎨 Dark & Light Theme
 System-aware theme with manual toggle support.
+
+---
+
+## Built-in DNS Providers
+
+### Global Providers
+
+| Provider | Primary IP | Secondary IP | Best For |
+|----------|-----------|-------------|----------|
+| Cloudflare | 1.1.1.1 | 1.0.0.1 | Maximum speed, privacy, and zero logging |
+| Google DNS | 8.8.8.8 | 8.8.4.4 | Global routing stability and web reliability |
+| Quad9 | 9.9.9.9 | 149.112.112.112 | Automatic threat intelligence and malware blocking |
+| AdGuard DNS | 94.140.14.14 | 94.140.15.15 | System-wide ad, tracker, and popup blocking |
+| OpenDNS | 208.67.222.222 | 208.67.220.220 | Family filtering and customizable security |
+| Mullvad | 194.242.2.2 | 2a07:a4c0::2 | Privacy-focused, no-logs DNS |
+
+### Regional Providers
+
+| Provider | Primary IP | Secondary IP | Best For |
+|----------|-----------|-------------|----------|
+| Shecan | 178.22.122.100 | 185.51.200.2 | Developers accessing blocked libraries, tools, and tech sites |
+| Electro | 78.157.42.100 | 78.157.42.101 | Gamers bypassing geo-restrictions to access online servers |
+| 403.online | 10.202.10.10 | 10.202.10.11 | Developers and content creators needing restricted web APIs |
+| Radar Game | 10.202.10.10 | 10.202.11.11 | Network stabilization and ping reduction for online gaming |
 
 ---
 
@@ -141,19 +164,6 @@ SparkDns/
 | DNS-over-HTTPS | ✅ | ❌ | ✅ |
 | System Tray | ✅ | ✅ | ✅ |
 | Auto-Start | ✅ | ✅ | ✅ |
-
----
-
-## Built-in DNS Providers
-
-| Provider | IPv4 | IPv6 | DoH |
-|----------|------|------|-----|
-| Cloudflare | 1.1.1.1 | 2606:4700:4700::1111 | ✅ |
-| Google | 8.8.8.8 | 2001:4860:4860::8888 | ✅ |
-| Quad9 | 9.9.9.9 | 2620:fe::fe | ✅ |
-| AdGuard | 94.140.14.14 | 2a10:50c0::ad1:ff | ✅ |
-| Mullvad | 194.242.2.2 | 2a07:a4c0::2 | ✅ |
-| OpenDNS | 208.67.222.222 | 2620:119:35::35 | ❌ |
 
 ---
 
