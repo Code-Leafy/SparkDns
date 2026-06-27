@@ -1,0 +1,43 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "SparkDns",
+  "version": "0.1.0",
+  "identifier": "com.sparkdns.app",
+  "build": {
+    "beforeDevCommand": "npm run dev",
+    "devUrl": "http://localhost:1420",
+    "beforeBuildCommand": "npm run build",
+    "frontendDist": "../dist"
+  },
+  "app": {
+    "windows": [
+      {
+        "title": "SparkDns",
+        "width": 1200,
+        "height": 690,
+        "minWidth": 960,
+        "minHeight": 650,
+        "resizable": true,
+        "fullscreen": false,
+        "center": true,
+        "decorations": false
+      }
+    ],
+    "security": {
+      "csp": "default-src 'self'; img-src 'self' data: asset: http://asset.localhost https:; style-src 'self' 'unsafe-inline'; script-src 'self'; connect-src 'self' ipc: http://ipc.localhost https://api.github.com https://github.com https://objects.githubusercontent.com"
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": "all",
+    "icon": [
+      "icons/icon.ico",
+      "icons/icon.png"
+    ],
+    "category": "Utility",
+    "copyright": "",
+    "shortDescription": "SparkDns DNS manager",
+    "longDescription": "Cross-platform DNS management and optimization desktop app for Windows, Linux, and macOS."
+  },
+  "plugins": {}
+}
