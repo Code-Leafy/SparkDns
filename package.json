@@ -1,12 +1,13 @@
 {
   "name": "sparkdns",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "Cross-platform DNS management and optimization desktop app",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
     "typecheck": "tsc --noEmit",
+    "tauri": "tauri",
     "tauri:dev": "tauri dev",
     "tauri:build": "tauri build",
     "preview": "vite preview"
