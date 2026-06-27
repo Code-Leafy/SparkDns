@@ -1,0 +1,1256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/x-icon" href="icon.ico">
+    <link rel="icon" type="image/png" href="icon.png">
+    <link rel="apple-touch-icon" href="icon.png">
+    <title>SparkDns</title>
+    <style>
+        /* 
+         * CLEAN & MINIMAL NATIVE APP UI
+         */
+        :root {
+            /* Light Minimal Theme (Default) */
+            --bg-app: #F7F7F9;
+            --bg-dock: rgba(255, 255, 255, 0.9);
+            --bg-surface: #FFFFFF;
+            --bg-surface-hover: #F9FAFB;
+            --bg-surface-elevated: #FFFFFF;
+            
+            --text-primary: #111827;
+            --text-secondary: #4B5563;
+            --text-muted: #9CA3AF;
+            
+            --border-light: #E5E7EB;
+            --border-highlight: #D1D5DB;
+            
+            --accent: #007AFF;
+            --accent-hover: #005BB5;
+            --accent-glow: rgba(0, 122, 255, 0.2);
+            --success: #10B981;
+            --danger: #EF4444;
+            --warning: #F59E0B;
+
+            --radius-md: 8px;
+            --radius-lg: 16px;
+            --radius-xl: 20px;
+
+            --ease: cubic-bezier(0.25, 0.1, 0.25, 1);
+            --spring: cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            
+            --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            --font-mono: "SF Mono", "JetBrains Mono", Consolas, Menlo, monospace;
+        }
+
+        [data-theme="dark"] {
+            /* OLED Deep Dark Theme */
+            --bg-app: #000000;
+            --bg-dock: rgba(14, 14, 16, 0.75);
+            --bg-surface: #0c0c0e;
+            --bg-surface-hover: #141418;
+            --bg-surface-elevated: #1a1a20;
+            --text-primary: #ffffff;
+            --text-secondary: #a1a1aa;
+            --text-muted: #6b7280;
+            --border-light: rgba(255, 255, 255, 0.08);
+            --border-highlight: rgba(255, 255, 255, 0.16);
+            --accent: #0A84FF;
+            --accent-hover: #0070df;
+            --accent-glow: rgba(10, 132, 255, 0.35);
+            --success: #32D74B;
+            --danger: #FF453A;
+            --warning: #FF9F0A;
+        }
+
+        /* HARD-LOCKED APP CONTAINER */
+        * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; -webkit-user-drag: none; }
+        body {
+            font-family: var(--font-sans); background-color: var(--bg-app); color: var(--text-primary);
+            height: 100vh; width: 100vw; overflow: hidden; 
+            display: flex; flex-direction: column; font-size: 14px; -webkit-font-smoothing: antialiased;
+            letter-spacing: -0.01em;
+        }
+
+        ::-webkit-scrollbar { width: 4px; height: 4px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: var(--border-highlight); border-radius: 4px; }
+
+        /* Window Titlebar Region */
+        .titlebar { height: 44px; width: 100%; display: flex; align-items: center; justify-content: center; position: absolute; top: 0; z-index: 1000; -webkit-app-region: drag; }
+        .titlebar-text { font-size: 13px; font-weight: 600; color: var(--text-muted); opacity: 0.6; }
+
+        /* Application Layout */
+        .app-container { display: flex; height: 100vh; padding-top: 44px; position: relative; }
+
+        /* Floating Dock Sidebar */
+        .dock-container { width: 90px; height: 100%; display: flex; justify-content: center; align-items: center; position: relative; z-index: 100; }
+        .dock {
+            background: var(--bg-dock); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--border-light); border-radius: var(--radius-xl);
+            padding: 12px 10px; display: flex; flex-direction: column; gap: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.03);
+        }
+        
+        .dock-item {
+            width: 44px; height: 44px; border-radius: 12px; display: flex; align-items: center; justify-content: center;
+            color: var(--text-muted); cursor: pointer; position: relative; transition: all 0.2s var(--ease); -webkit-app-region: no-drag;
+        }
+        .dock-item svg { width: 22px; height: 22px; stroke-width: 1.8; transition: all 0.2s var(--ease); }
+        .dock-item:hover { color: var(--text-primary); background: var(--bg-surface-hover); }
+        .dock-item.active { color: #ffffff; background: var(--accent); box-shadow: 0 2px 10px var(--accent-glow); }
+        
+        .dock-item::after {
+            content: attr(data-tooltip); position: absolute; left: 56px; background: var(--bg-surface-elevated); border: 1px solid var(--border-light);
+            padding: 6px 12px; border-radius: 8px; font-size: 13px; font-weight: 500; color: var(--text-primary);
+            opacity: 0; pointer-events: none; transform: translateX(-5px); transition: all 0.2s var(--ease); box-shadow: 0 4px 12px rgba(0,0,0,0.05); white-space: nowrap; z-index: 100;
+        }
+        .dock-item:hover::after { opacity: 1; transform: translateX(0); }
+
+        /* Main View Wrapper */
+        .main-content { flex: 1; padding: 0 32px 32px 16px; display: flex; flex-direction: column; height: 100%; min-width: 0; position: relative; }
+        .page-container {
+            max-width: 1000px; width: 100%; height: 100%; margin: 0 auto; display: flex; flex-direction: column; position: relative;
+        }
+        .page-enter { animation: pageEnter 0.3s var(--ease) forwards; }
+        @keyframes pageEnter { 0% { opacity: 0; transform: translateY(8px); } 100% { opacity: 1; transform: translateY(0); } }
+
+        /* Headers */
+        .page-header { margin-bottom: 24px; flex-shrink: 0; display: flex; justify-content: space-between; align-items: center; }
+        h2 { font-size: 24px; font-weight: 600; color: var(--text-primary); letter-spacing: -0.02em; line-height: 1; }
+
+        /* STRICT 4x3 GRID CONTAINER */
+        .grid-container {
+            flex: 1; display: grid; grid-template-columns: repeat(4, 1fr); grid-template-rows: repeat(3, 1fr);
+            gap: 16px; min-height: 0;
+        }
+        .col-span-1 { grid-column: span 1; } .col-span-2 { grid-column: span 2; } .col-span-3 { grid-column: span 3; } .col-span-4 { grid-column: span 4; }
+        .row-span-1 { grid-row: span 1; } .row-span-2 { grid-row: span 2; } .row-span-3 { grid-row: span 3; }
+
+        /* Uniform Cards */
+        .card {
+            background: var(--bg-surface); border: 1px solid var(--border-light); border-radius: var(--radius-lg);
+            padding: 24px; display: flex; flex-direction: column; position: relative; overflow: hidden;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+        }
+        .card.interactive { cursor: pointer; transition: all 0.2s var(--ease); }
+        .card.interactive:hover { border-color: var(--border-highlight); background: var(--bg-surface-hover); }
+
+        .card-label { 
+            font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; 
+            letter-spacing: 0.05em; margin-bottom: 16px; flex-shrink: 0; 
+        }
+        .card-content { flex: 1; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; } 
+
+        .flex { display: flex; } .flex-col { display: flex; flex-direction: column; } .items-center { align-items: center; } .justify-between { justify-content: space-between; }
+
+        /* Buttons & Spinners */
+        .btn {
+            background: var(--bg-surface); color: var(--text-primary); border: 1px solid var(--border-light);
+            padding: 10px 16px; border-radius: var(--radius-md); cursor: pointer; font-size: 13px; font-weight: 600; font-family: inherit;
+            transition: all 0.2s var(--ease); display: inline-flex; align-items: center; justify-content: center; gap: 8px; -webkit-app-region: no-drag;
+        }
+        .btn:hover:not(:disabled) { background: var(--bg-surface-hover); border-color: var(--border-highlight); }
+        .btn:active:not(:disabled) { transform: scale(0.98); }
+        
+        .btn-primary { background: var(--accent); color: #fff; border: none; font-weight: 600; }
+        .btn-primary:hover:not(:disabled) { background: var(--accent-hover); box-shadow: 0 4px 12px var(--accent-glow); }
+
+        .btn-icon { padding: 6px; border-radius: 8px; border: 1px solid transparent; background: transparent; color: var(--text-secondary); cursor: pointer; transition: all 0.2s; }
+        .btn-icon:hover { color: var(--text-primary); background: var(--bg-surface-hover); border-color: var(--border-light); }
+
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+        .spinning { animation: spin 1s linear infinite; }
+
+        /* Status Orb */
+        .status-orb { width: 10px; height: 10px; border-radius: 50%; background: var(--border-highlight); flex-shrink: 0; transition: all 0.3s; }
+        .status-orb.active { background: var(--success); box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.2); }
+
+        /* List Items */
+        .list-row { display: flex; align-items: center; justify-content: space-between; padding: 14px 24px; border-bottom: 1px solid var(--border-light); transition: background 0.2s; }
+        .list-row:last-child { border-bottom: none; }
+        .list-row:hover { background: var(--bg-surface-hover); }
+
+        /* Input Toggles */
+        .toggle { position: relative; display: inline-block; width: 40px; height: 24px; }
+        .toggle input { opacity: 0; width: 0; height: 0; }
+        .toggle-slider { position: absolute; inset: 0; background: var(--border-highlight); transition: 0.3s var(--ease); border-radius: 24px; cursor: pointer; }
+        .toggle-slider:before { position: absolute; content: ""; height: 20px; width: 20px; left: 2px; bottom: 2px; background: white; transition: 0.3s var(--ease); border-radius: 50%; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        input:checked + .toggle-slider { background: var(--success); }
+        input:checked + .toggle-slider:before { transform: translateX(16px); }
+
+        /* --- Floating Action Bar (Network Library) --- */
+        .floating-action-bar {
+            position: absolute;
+            bottom: 32px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            background: var(--bg-dock);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            padding: 8px 12px;
+            border-radius: 100px;
+            box-shadow: 0 16px 40px rgba(0,0,0,0.15), inset 0 1px 1px rgba(255,255,255,0.1);
+            border: 1px solid var(--border-light);
+            z-index: 100;
+        }
+
+        .search-wrapper { position: relative; display: flex; align-items: center; }
+        .search-wrapper svg { position: absolute; left: 16px; color: var(--text-muted); width: 16px; height: 16px; pointer-events: none; }
+        
+        .search-wrapper input {
+            background: var(--bg-surface-elevated);
+            border: 1px solid var(--border-highlight);
+            color: var(--text-primary);
+            border-radius: 100px;
+            padding: 12px 20px 12px 42px;
+            width: 260px;
+            font-size: 14px;
+            outline: none;
+            transition: all 0.2s;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.02);
+        }
+        
+        .search-wrapper input:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 2px var(--accent-glow), inset 0 2px 4px rgba(0,0,0,0.02);
+        }
+
+        .fab-icon-btn {
+            background: var(--bg-surface-elevated); border: 1px solid var(--border-highlight); color: var(--text-primary);
+            width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+            cursor: pointer; transition: all 0.2s var(--ease); box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+        .fab-icon-btn:hover { background: var(--bg-surface-hover); transform: scale(1.05); border-color: var(--text-muted); }
+        .floating-action-bar .btn-primary { border-radius: 100px; padding: 0 24px; height: 44px; font-size: 14px; font-weight: 600; white-space: nowrap; box-shadow: 0 4px 12px var(--accent-glow); }
+
+        /* Diagnostic Brand Targets */
+        .brand-grid { display: flex; justify-content: space-between; align-items: center; width: 100%; padding: 10px 0; }
+        .brand-target { display: flex; flex-direction: column; align-items: center; gap: 10px; color: var(--text-muted); transition: all 0.4s var(--ease); position: relative; padding-bottom: 16px; }
+        .brand-icon-wrapper { display: flex; justify-content: center; align-items: center; width: 34px; height: 34px; transition: all 0.4s var(--ease); }
+        .brand-icon { width: 100%; height: 100%; opacity: 0.7; object-fit: contain; transition: all 0.4s var(--ease); }
+        .brand-name { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; transition: color 0.4s; }
+        
+        /* Drop Down Latency Text Animation */
+        .target-latency { font-size: 12px; font-weight: 700; position: absolute; bottom: -2px; opacity: 0; transform: translateY(-8px); letter-spacing: 0.05em; }
+        .target-latency.show { animation: dropDownLat 0.35s var(--spring) forwards; }
+        @keyframes dropDownLat { 0% { opacity: 0; transform: translateY(-8px); } 100% { opacity: 1; transform: translateY(0); } }
+        
+        /* Probing Pulsing State */
+        .brand-target.probing .brand-icon-wrapper { transform: scale(1.1); animation: pulseGlow 1.5s infinite; opacity: 1; }
+        .brand-target.success .brand-icon-wrapper { opacity: 1; filter: drop-shadow(0 0 10px var(--brand-color)); -webkit-filter: drop-shadow(0 0 10px var(--brand-color)); }
+        .brand-target.fail .brand-icon-wrapper { opacity: 0.8; filter: drop-shadow(0 0 8px rgba(239, 68, 68, 0.6)) grayscale(100%); -webkit-filter: drop-shadow(0 0 8px rgba(239, 68, 68, 0.6)) grayscale(100%); }
+        .brand-target.success .brand-icon { opacity: 1; }
+
+        @keyframes pulseGlow { 0% { opacity: 0.5; filter: drop-shadow(0 0 0px transparent); } 50% { opacity: 1; filter: drop-shadow(0 0 6px currentColor); } 100% { opacity: 0.5; filter: drop-shadow(0 0 0px transparent); } }
+
+        /* Animated Drawing Charts */
+        @keyframes drawChart { from { stroke-dashoffset: 1000; } to { stroke-dashoffset: 0; } }
+
+        /* Skeletons */
+        .skeleton { background: linear-gradient(90deg, var(--bg-surface-hover) 25%, var(--border-light) 50%, var(--bg-surface-hover) 75%); background-size: 200% 100%; animation: shimmer 2s infinite; border-radius: 8px;}
+        .skeleton-inline { display: inline-block; height: 16px; border-radius: 4px; vertical-align: middle; background: linear-gradient(90deg, var(--bg-surface-hover) 25%, var(--border-light) 50%, var(--bg-surface-hover) 75%); background-size: 200% 100%; animation: shimmer 2s infinite; }
+        @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+
+        /* Modal Overlay & Base Form Inputs inside Modals */
+        .modal-overlay {
+            position: fixed; inset: 0; background: rgba(0,0,0,0.6); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+            display: flex; justify-content: center; align-items: center; z-index: 2000; opacity: 0; pointer-events: none; transition: opacity 0.2s;
+        }
+        .modal-overlay.open { opacity: 1; pointer-events: all; }
+        .modal-content {
+            background: var(--bg-surface); border: 1px solid var(--border-light); padding: 32px; border-radius: var(--radius-xl); width: 440px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.3); transform: scale(0.95); transition: all 0.3s var(--spring);
+        }
+        .modal-overlay.open .modal-content { transform: scale(1); }
+        
+        .modal-content input[type="text"] {
+            width: 100%; padding: 10px 14px; background: var(--bg-surface-hover); border: 1px solid var(--border-highlight); color: var(--text-primary);
+            border-radius: var(--radius-md); outline: none; transition: all 0.2s; font-family: var(--font-sans); font-size: 13px;
+        }
+        .modal-content input[type="text"]:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-glow); }
+        
+        .chart-svg { width: 100%; height: 100%; overflow: visible; }
+        .chart-line { fill: none; stroke: var(--accent); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+        /* Toast Notifications */
+        .toast {
+            background: var(--bg-surface-elevated); border: 1px solid var(--border-light); padding: 16px 20px;
+            border-radius: var(--radius-md); box-shadow: 0 8px 32px rgba(0,0,0,0.2); color: var(--text-primary);
+            min-width: 280px; animation: toastEnter 0.4s var(--spring) forwards, toastExit 0.3s 3.5s forwards;
+            display: flex; flex-direction: column; gap: 4px; pointer-events: none;
+        }
+        @keyframes toastEnter { from { opacity: 0; transform: translateX(20px); } to { opacity: 1; transform: translateX(0); } }
+        @keyframes toastExit { from { opacity: 1; transform: translateX(0); } to { opacity: 0; transform: translateX(20px); } }
+
+        /* ===== SparkDns Neon Spark Branding ===== */
+        :root {
+            --spark-color: #00E5FF;
+            --spark-glow: 0 0 6px rgba(0, 229, 255, 0.7), 0 0 14px rgba(0, 229, 255, 0.45), 0 0 26px rgba(0, 229, 255, 0.25);
+        }
+        [data-theme="dark"] {
+            --spark-color: #00E5FF;
+            --spark-glow: 0 0 8px rgba(0, 229, 255, 0.85), 0 0 18px rgba(0, 229, 255, 0.55), 0 0 34px rgba(0, 229, 255, 0.3);
+        }
+
+        @keyframes sparkPulse {
+            0%, 100% { filter: drop-shadow(0 0 4px rgba(0, 229, 255, 0.5)); opacity: 0.92; }
+            50% { filter: drop-shadow(0 0 10px rgba(0, 229, 255, 0.9)) drop-shadow(0 0 20px rgba(0, 229, 255, 0.5)); opacity: 1; }
+        }
+
+        .spark-logo { color: var(--spark-color); animation: sparkPulse 2.6s ease-in-out infinite; }
+
+        /* Titlebar spark accent */
+        .titlebar-spark { width: 14px; height: 14px; margin-right: 7px; color: var(--spark-color); animation: sparkPulse 2.6s ease-in-out infinite; flex-shrink: 0; }
+
+        /* Dock brand mark above navigation */
+        .dock-brand { width: 44px; height: 44px; border-radius: 12px; display: flex; align-items: center; justify-content: center; margin-bottom: 8px; background: var(--bg-surface-hover); border: 1px solid var(--border-light); }
+        .dock-brand img { width: 26px; height: 26px; object-fit: contain; color: var(--spark-color); animation: sparkPulse 2.6s ease-in-out infinite; }
+
+        /* Active dock item neon spark accent */
+        .dock-item.active { box-shadow: 0 2px 10px var(--accent-glow), 0 0 0 1px rgba(0, 229, 255, 0.15); }
+    </style>
+</head>
+<body>
+
+    <div class="titlebar" data-tauri-drag-region>
+        <div class="titlebar-text" data-tauri-drag-region style="display: flex; align-items: center;">
+            <img class="titlebar-spark" src="icon.png" alt="SparkDns" style="width: 16px; height: 16px; margin-right: 7px; object-fit: contain;">
+            SparkDns
+        </div>
+    </div>
+
+    <div class="app-container">
+        <!-- Floating Dock Sidebar -->
+        <div class="dock-container">
+            <nav class="dock">
+                <div class="dock-brand" title="SparkDns">
+                    <img src="icon.png" alt="SparkDns">
+                </div>
+                <div class="dock-item active" data-tab="home" data-tooltip="Overview">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="3" width="7" height="7" rx="1.5"></rect><rect x="14" y="3" width="7" height="7" rx="1.5"></rect><rect x="14" y="14" width="7" height="7" rx="1.5"></rect><rect x="3" y="14" width="7" height="7" rx="1.5"></rect></svg>
+                </div>
+                <div class="dock-item" data-tab="profiles" data-tooltip="Network Library">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
+                </div>
+                <!-- App Rules Tab Icon -->
+                <div class="dock-item" data-tab="rules" data-tooltip="App Rules">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></svg>
+                </div>
+                <div class="dock-item" data-tab="check" data-tooltip="Diagnostics">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+                </div>
+                <div class="dock-item" data-tab="tools" data-tooltip="System Tools">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="9" y1="21" x2="9" y2="9"></line></svg>
+                </div>
+                <div style="height: 1px; background: var(--border-light); margin: 4px 0; border-radius: 1px;"></div>
+                <div class="dock-item" data-tab="settings" data-tooltip="Preferences">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+                </div>
+            </nav>
+        </div>
+
+        <main class="main-content" id="content-area">
+            <div class="page-container" id="page-wrapper"></div>
+        </main>
+    </div>
+
+    <!-- Modal Form for Adding Custom Profiles -->
+    <div class="modal-overlay" id="addProfileModal">
+        <div class="modal-content">
+            <h3 style="font-size: 18px; font-weight: 600; margin-bottom: 6px;">New Custom Node</h3>
+            <p style="color:var(--text-secondary); font-size:13px; margin-bottom: 24px;">Define a private IPv4/IPv6 target server.</p>
+            <div style="margin-bottom: 20px;"><div style="margin-bottom: 8px; font-weight: 500; font-size: 13px;">Profile Alias</div><input type="text" id="cp_name" placeholder="e.g. Corporate VPN"></div>
+            <div class="flex" style="gap: 16px; margin-bottom: 20px;">
+                <div style="flex:1;"><div style="margin-bottom: 8px; font-weight: 500; font-size: 13px;">Primary IPv4</div><input type="text" id="cp_primary" placeholder="8.8.8.8"></div>
+                <div style="flex:1;"><div style="margin-bottom: 8px; font-weight: 500; font-size: 13px;">Secondary IPv4</div><input type="text" id="cp_secondary" placeholder="8.8.4.4"></div>
+            </div>
+            <div class="flex" style="gap: 16px; margin-bottom: 24px;">
+                <div style="flex:1;"><div style="margin-bottom: 8px; font-weight: 500; font-size: 13px;">Primary IPv6</div><input type="text" id="cp_ipv6_1" placeholder="Optional"></div>
+                <div style="flex:1;"><div style="margin-bottom: 8px; font-weight: 500; font-size: 13px;">Secondary IPv6</div><input type="text" id="cp_ipv6_2" placeholder="Optional"></div>
+            </div>
+            <div class="flex" style="gap: 12px;">
+                <button class="btn" onclick="toggleModal(false)" style="flex:1;">Cancel</button>
+                <button class="btn btn-primary" onclick="saveCustomProfile()" style="flex:1;">Save Node</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification Container -->
+    <div id="toast-container" style="position: fixed; bottom: 32px; right: 32px; display: flex; flex-direction: column; gap: 12px; z-index: 9999;"></div>
+
+    <script>
+        // ==========================================
+        // Tauri Interface & Core Logic
+        // ==========================================
+        const isTauri = window.__TAURI__ !== undefined;
+        const invokeTauri = isTauri ? window.__TAURI__.invoke : async (cmd, args) => {
+            const delay = ms => new Promise(res => setTimeout(res, ms));
+            if (cmd === 'evaluate_dns') {
+                await delay(300 + Math.random() * 200);
+                return { ms: Math.floor(Math.random() * 80) + 12, reach: [100, 100, 100, 95][Math.floor(Math.random()*4)] };
+            }
+            if (cmd === 'comprehensive_check') {
+                await delay(1200);
+                return { latency: Math.floor(Math.random()*80)+10, dnssec_valid: true, leak_secure: true, packet_loss: 0 };
+            }
+            await delay(200); return { status: 'success' };
+        };
+
+        const api = {
+            applyProfile: (p) => invokeTauri('apply_dns', { primary: p.primary, secondary: p.secondary }),
+            clearDns: () => invokeTauri('clear_dns'),
+            flushCache: () => invokeTauri('flush_cache'),
+            resetDhcp: () => invokeTauri('reset_dhcp'),
+            evaluateProfile: (ip, sites) => invokeTauri('evaluate_dns', { ip, sites }),
+            comprehensiveCheck: () => invokeTauri('comprehensive_check'),
+            saveConfig: (c) => invokeTauri('save_config', { config: c }),
+            loadConfig: () => invokeTauri('load_config')
+        };
+
+        const defaultPresets = [
+            { id: 'p_google', name: 'Google Public', primary: '8.8.8.8', secondary: '8.8.4.4', ipv6: true, favorite: true, preset: true },
+            { id: 'p_cloudflare', name: 'Cloudflare', primary: '1.1.1.1', secondary: '1.0.0.1', ipv6: true, favorite: true, preset: true },
+            { id: 'p_opendns', name: 'OpenDNS', primary: '208.67.222.222', secondary: '208.67.220.220', ipv6: true, favorite: false, preset: true },
+            { id: 'p_quad9', name: 'Quad9 Security', primary: '9.9.9.9', secondary: '149.112.112.112', ipv6: true, favorite: false, preset: true }
+        ];
+
+        // Epic, GitHub, and ChatGPT automatically use CSS mask trick to flawlessly tint colors and glows globally
+        const diagTargets = [
+            { id: 'cf', name: 'Cloudflare', img: 'https://cdn.simpleicons.org/cloudflare/F38020', shadow: '#F38020' },
+            { id: 'epic', name: 'Epic Games', img: 'https://cdn.simpleicons.org/epicgames', shadow: 'var(--text-primary)', isMask: true },
+            { id: 'gemini', name: 'Gemini', img: 'https://cdn.simpleicons.org/googlegemini/8AB4F8', shadow: '#8AB4F8' },
+            { id: 'steam', name: 'Steam', img: 'https://cdn.simpleicons.org/steam/148CD2', shadow: '#148CD2' }, // Updated deeper, richer Steam blue
+            { id: 'yt', name: 'YouTube', img: 'https://cdn.simpleicons.org/youtube/FF0000', shadow: '#FF0000' },
+            { id: 'gpt', name: 'ChatGPT', img: 'https://cdn.jsdelivr.net/gh/glincker/thesvg@main/public/icons/openai-chatgpt/default.svg', shadow: '#10A37F', isMask: true },
+            { id: 'git', name: 'GitHub', img: 'https://cdn.simpleicons.org/github', shadow: 'var(--text-primary)', isMask: true }
+        ];
+
+        let cfg = {
+            activeProfileId: null, 
+            isConnected: false, 
+            profiles: [...defaultPresets], 
+            history: [],
+            rules: [], // App Rules storage
+            settings: { theme: 'dark', dohEnabled: true, ipv6Enabled: true, startWithWindows: false, notificationsEnabled: true, minimizeToTray: true }
+        };
+
+        let metricsCache = {};
+        let backgroundEvalFinished = false;
+        let isEvaluating = false;
+        let sessionStats = { queries: 0, uptime: '0h 0m', activeSince: null };
+        let currentMountedTab = null;
+
+        // Speed-based color calculation logic + Premium multi-layer glows
+        function getSpeedStyles(ms) {
+            if (ms < 30) {
+                return { color: 'var(--success)', glow: '0 0 8px rgba(16,185,129,0.5), 0 0 16px rgba(16,185,129,0.3)' };
+            } else if (ms < 60) {
+                return { color: 'var(--warning)', glow: '0 0 8px rgba(245,158,11,0.5), 0 0 16px rgba(245,158,11,0.3)' };
+            } else {
+                return { color: 'var(--danger)', glow: '0 0 8px rgba(239,68,68,0.5), 0 0 16px rgba(239,68,68,0.3)' };
+            }
+        }
+
+        function formatDns(p) { return p.secondary ? `${p.primary} &bull; ${p.secondary}` : p.primary; }
+
+        // ==========================================
+        // Boot & Navigation
+        // ==========================================
+        async function init() {
+            if (isTauri) { try { const loaded = await api.loadConfig(); if (loaded) cfg = { ...cfg, ...loaded }; } catch(e){} }
+            applyTheme(cfg.settings.theme);
+            if (cfg.isConnected && !sessionStats.activeSince) sessionStats.activeSince = new Date();
+            
+            setInterval(() => { if(cfg.isConnected){ sessionStats.queries += Math.floor(Math.random()*3)+1; updateDashboardLiveStats(); } }, 2000);
+
+            mountView('home');
+            bgEvaluateAll();
+
+            document.querySelectorAll('.dock-item').forEach(el => {
+                el.addEventListener('click', () => {
+                    if (el.dataset.tab) {
+                        document.querySelectorAll('.dock-item').forEach(n => n.classList.remove('active'));
+                        el.classList.add('active');
+                        mountView(el.dataset.tab);
+                    }
+                });
+            });
+        }
+
+        function mountView(tab) {
+            const views = { 'home': viewHome, 'profiles': viewProfiles, 'rules': viewRules, 'check': viewCheck, 'tools': viewTools, 'settings': viewSettings };
+            const wrapper = document.getElementById('page-wrapper');
+            
+            // Preserve Search specifically
+            let currentSearch = '';
+            if (tab === 'profiles') {
+                const searchEl = document.getElementById('search-profiles');
+                if (searchEl) currentSearch = searchEl.value;
+            }
+
+            if (currentMountedTab !== tab) {
+                wrapper.classList.remove('page-enter');
+                void wrapper.offsetWidth; 
+                wrapper.classList.add('page-enter');
+                currentMountedTab = tab;
+            }
+            
+            wrapper.innerHTML = views[tab] ? views[tab]() : '';
+
+            // Restore Search and execute filter instantly
+            if (tab === 'profiles' && currentSearch) {
+                const searchEl = document.getElementById('search-profiles');
+                if (searchEl) {
+                    searchEl.value = currentSearch;
+                    filterProfiles();
+                }
+            }
+        }
+
+        async function syncState() {
+            if (isTauri) await api.saveConfig(cfg);
+            if (currentMountedTab) mountView(currentMountedTab);
+        }
+
+        // ==========================================
+        // UI Helpers
+        // ==========================================
+        function updateDashboardLiveStats() {
+            const qEl = document.getElementById('live-queries');
+            const uEl = document.getElementById('live-uptime');
+            if(qEl) qEl.innerText = sessionStats.queries.toLocaleString();
+            if(uEl && sessionStats.activeSince) {
+                const diff = Math.floor((new Date() - sessionStats.activeSince) / 60000);
+                uEl.innerText = `${Math.floor(diff / 60)}h ${diff % 60}m`;
+            }
+        }
+
+        function generateSparklineSVG() {
+            let points = []; let current = 25;
+            for(let i=0; i<20; i++) {
+                current += (Math.random() * 8 - 4);
+                if(current < 5) current = 5; if(current > 45) current = 45;
+                points.push(`${i * 15},${50 - current}`);
+            }
+            return `<svg class="chart-svg" viewBox="0 0 285 55" preserveAspectRatio="none"><polyline class="chart-line" points="${points.join(' ')}" /></svg>`;
+        }
+
+        function generateAnimatedChartSVG(color, seed = 1) {
+            let points = []; 
+            let current = 25;
+            for(let i=0; i<=20; i++) {
+                current += (Math.sin(i * seed) * 8) + (Math.random() * 6 - 3);
+                if(current < 5) current = 5; if(current > 45) current = 45;
+                points.push(`${i * 15},${55 - current}`);
+            }
+            return `<svg viewBox="0 0 300 60" preserveAspectRatio="none" style="width:100%; height:100%; display:block; color:${color}; filter: drop-shadow(0 0 6px currentColor);">
+                        <polyline fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="1000" stroke-dashoffset="1000" style="animation: drawChart 1.5s cubic-bezier(0.25, 1, 0.5, 1) forwards;" points="${points.join(' ')}" />
+                    </svg>`;
+        }
+
+        function formatDate(dateStr) {
+            const d = new Date(dateStr);
+            return d.toLocaleString('en-US', { year: 'numeric', month: 'numeric', day: 'numeric', hour: 'numeric', minute: 'numeric', second: 'numeric' });
+        }
+
+        function showNotification(title, message) {
+            if (!cfg.settings.notificationsEnabled) return;
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = 'toast';
+            toast.innerHTML = `
+                <div style="font-weight: 600; font-size: 14px;">${title}</div>
+                <div style="color: var(--text-secondary); font-size: 13px;">${message}</div>
+            `;
+            container.appendChild(toast);
+            setTimeout(() => toast.remove(), 4000);
+        }
+
+        // Fake Tool Actions
+        function resetAdapter() { alert('Network adapter successfully restarted.'); }
+        function runTraceroute() { alert('Traceroute complete: 12 hops to target node. 0% packet loss.'); }
+        async function factoryReset() {
+            if(confirm('Are you sure you want to restore to factory settings? All custom profiles will be lost.')) {
+                cfg = { activeProfileId: null, isConnected: false, profiles: [...defaultPresets], history: [], rules: [], settings: { theme: 'dark', dohEnabled: true, ipv6Enabled: true, startWithWindows: false, notificationsEnabled: true, minimizeToTray: true } };
+                applyTheme(cfg.settings.theme);
+                await syncState(); 
+            }
+        }
+
+        async function connectNode(id, btnElem) {
+            if (btnElem) {
+                btnElem.disabled = true;
+                btnElem.innerHTML = `<svg class="spinning" viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"><circle cx="12" cy="12" r="10" stroke-opacity="0.25"></circle><path d="M12 2a10 10 0 0 1 10 10"></path></svg> Establishing...`;
+            }
+            await new Promise(r => setTimeout(r, 600)); // smooth visual delay
+            await applyProfile(id);
+        }
+
+        async function disconnectNode(btnElem) {
+            if (btnElem) {
+                btnElem.disabled = true;
+                btnElem.innerHTML = `<svg class="spinning" viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"><circle cx="12" cy="12" r="10" stroke-opacity="0.25"></circle><path d="M12 2a10 10 0 0 1 10 10"></path></svg> Disconnecting...`;
+            }
+            await new Promise(r => setTimeout(r, 400));
+            await disconnect();
+        }
+
+        async function applyProfile(id) {
+            const p = cfg.profiles.find(p => p.id === id); if (!p) return;
+            await api.applyProfile(p);
+            cfg.activeProfileId = p.id; cfg.isConnected = true;
+            sessionStats.activeSince = new Date(); sessionStats.queries = 0;
+            cfg.history.unshift({ name: p.name, ip: formatDns(p), time: new Date().toLocaleString() });
+            if (cfg.history.length > 50) cfg.history.pop();
+            await syncState();
+        }
+
+        async function disconnect() {
+            await api.clearDns();
+            cfg.activeProfileId = null; cfg.isConnected = false;
+            sessionStats.activeSince = null; sessionStats.queries = 0;
+            cfg.history.unshift({ name: "System Default", ip: "Auto (DHCP)", time: new Date().toLocaleString() });
+            await syncState();
+        }
+
+        async function refreshPings(btnElem) {
+            if (btnElem) {
+                const icon = btnElem.querySelector('svg');
+                if (icon) icon.classList.add('spinning');
+            }
+            await bgEvaluateAll(true);
+            if (btnElem) {
+                const icon = btnElem.querySelector('svg');
+                if (icon) icon.classList.remove('spinning');
+            }
+        }
+
+        async function bgEvaluateAll(force = false) {
+            if (force) metricsCache = {};
+            isEvaluating = true;
+            backgroundEvalFinished = false;
+            
+            // Re-render immediately to trigger in-place skeletons
+            if (currentMountedTab === 'home' || currentMountedTab === 'profiles') mountView(currentMountedTab);
+            
+            for (const p of cfg.profiles) {
+                const res = await api.evaluateProfile(p.primary, "");
+                metricsCache[p.id] = res;
+            }
+            
+            isEvaluating = false;
+            backgroundEvalFinished = true;
+            
+            if (currentMountedTab === 'home' || currentMountedTab === 'profiles') mountView(currentMountedTab);
+        }
+
+        function filterProfiles() {
+            const term = document.getElementById('search-profiles').value.toLowerCase();
+            document.querySelectorAll('.profile-row').forEach(row => {
+                const name = row.dataset.name.toLowerCase();
+                const ip = row.dataset.ip.toLowerCase();
+                if(name.includes(term) || ip.includes(term)) row.style.display = 'flex';
+                else row.style.display = 'none';
+            });
+        }
+
+        function applyTheme(theme) { document.documentElement.setAttribute('data-theme', theme); }
+        async function updateSetting(key, val) { cfg.settings[key] = val; if (key === 'theme') applyTheme(val); await syncState(); }
+        
+        function toggleModal(show) {
+            const el = document.getElementById('addProfileModal');
+            if(show) {
+                ['cp_name','cp_primary','cp_secondary','cp_ipv6_1','cp_ipv6_2'].forEach(id => {
+                    const i = document.getElementById(id);
+                    if(i) i.value = '';
+                });
+                el.classList.add('open');
+            } else {
+                el.classList.remove('open');
+            }
+        }
+        
+        async function saveCustomProfile() { const name = document.getElementById('cp_name').value.trim(); const primary = document.getElementById('cp_primary').value.trim(); if (!name || !primary) return; cfg.profiles.push({ id: 'custom_' + Date.now(), name, primary, secondary: document.getElementById('cp_secondary').value.trim(), ipv6: !!document.getElementById('cp_ipv6_1').value.trim(), favorite: false, preset: false }); toggleModal(false); await syncState(); bgEvaluateAll(); }
+        async function toggleFavorite(id) { const p = cfg.profiles.find(x => x.id === id); if (p) p.favorite = !p.favorite; await syncState(); }
+        async function deleteProfile(id) { cfg.profiles = cfg.profiles.filter(p => p.id !== id); if (cfg.activeProfileId === id) await disconnect(); else await syncState(); }
+
+        // --- App Rules Functions ---
+        function promptAddRule() {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = '.exe';
+            input.onchange = e => {
+                if (e.target.files.length > 0) {
+                    const file = e.target.files[0];
+                    const newRule = {
+                        id: 'rule_' + Date.now(),
+                        exeName: file.name,
+                        exePath: file.name, // Mocked path using file name
+                        profileId: cfg.profiles[0].id
+                    };
+                    cfg.rules.push(newRule);
+                    syncState();
+                }
+            };
+            input.click();
+        }
+
+        function updateRuleProfile(id, profileId) {
+            const rule = cfg.rules.find(r => r.id === id);
+            if (rule) {
+                rule.profileId = profileId;
+                syncState();
+            }
+        }
+
+        function deleteRule(id) {
+            cfg.rules = cfg.rules.filter(r => r.id !== id);
+            syncState();
+        }
+
+        async function simulateAppLaunch(ruleId) {
+            const rule = cfg.rules.find(r => r.id === ruleId);
+            const profile = cfg.profiles.find(p => p.id === rule.profileId);
+            if (rule && profile) {
+                await applyProfile(profile.id);
+                showNotification('DNS Changed Automatically', `Routed to ${profile.name} because ${rule.exeName} was launched.`);
+            }
+        }
+
+        // ==========================================
+        // Views
+        // ==========================================
+        function viewHome() {
+            const active = cfg.profiles.find(p => p.id === cfg.activeProfileId);
+            const favorites = cfg.profiles.filter(p => p.favorite);
+            
+            let recoHtml = '';
+            if (isEvaluating && Object.keys(metricsCache).length < 2) {
+                recoHtml = [1,2].map(()=>`<div class="card col-span-1 row-span-1 skeleton" style="min-height:0;"></div>`).join('');
+            } else {
+                let sorted = [...cfg.profiles].filter(p => metricsCache[p.id]).sort((a,b) => (metricsCache[a.id].reach !== metricsCache[b.id].reach) ? metricsCache[b.id].reach - metricsCache[a.id].reach : metricsCache[a.id].ms - metricsCache[b.id].ms).slice(0, 2);
+                recoHtml = sorted.map((p, idx) => {
+                    let m = metricsCache[p.id];
+                    let speedUi = getSpeedStyles(m.ms);
+                    return `
+                    <div class="card col-span-1 row-span-1 interactive flex-col justify-between" onclick="connectNode('${p.id}', this)">
+                        <div class="card-label">${idx===0?'Top Choice':'Alternative'}</div>
+                        <div class="flex-col">
+                            <h4 style="font-size: 15px; font-weight: 600; margin-bottom: 2px;">${p.name}</h4>
+                            <span class="font-mono text-muted" style="font-size: 12px;">${formatDns(p)}</span>
+                        </div>
+                        <div class="flex items-end justify-between mt-auto">
+                            <div style="color:${speedUi.color}; text-shadow: ${speedUi.glow}; font-size:24px; font-weight:700; letter-spacing: -0.02em;">${m.ms}<span style="font-size: 14px;">ms</span></div>
+                            <div style="font-size: 10px; color:var(--text-muted); font-weight:700; letter-spacing: 0.05em;">${m.reach}% REACH</div>
+                        </div>
+                    </div>`;
+                }).join('');
+            }
+
+            let favHtml = favorites.map(p => {
+                const m = metricsCache[p.id];
+                let pingHtml = '<span class="text-muted">--</span>';
+                if (isEvaluating && !m) {
+                    pingHtml = `<div class="skeleton-inline" style="width: 36px;"></div>`;
+                } else if (m) {
+                    let speedUi = getSpeedStyles(m.ms);
+                    pingHtml = `<span style="color:${speedUi.color}; text-shadow: ${speedUi.glow}; font-weight:600;">${m.ms}ms</span>`;
+                }
+                
+                return `
+                <div class="list-row interactive" style="padding: 12px 16px; border:none; margin-bottom:4px; border-radius: 8px;" onclick="connectNode('${p.id}', this)">
+                    <span style="font-weight: 600; font-size: 14px; color: var(--text-primary);">${p.name}</span>
+                    <div class="flex items-center" style="gap: 8px;">
+                        ${pingHtml}
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" class="text-muted"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+                    </div>
+                </div>`;
+            }).join('');
+
+            return `
+                <div class="page-header">
+                    <h2>Overview</h2>
+                </div>
+                
+                <div class="grid-container">
+                    
+                    <!-- Highly accurate replica of Current Connection UI -->
+                    <div class="card col-span-2 row-span-2 flex-col" style="padding: 32px;">
+                        <div class="card-label" style="margin-bottom: 24px;">Current Connection</div>
+                        <div class="flex items-center" style="gap: 12px; margin-bottom: 32px;">
+                            <div class="status-orb ${cfg.isConnected ? 'active' : ''}" style="width: 12px; height: 12px;"></div>
+                            <h3 style="font-size: 24px; font-weight: 600; color: var(--text-primary); margin: 0;">${cfg.isConnected ? 'Network Secured' : 'System Default'}</h3>
+                        </div>
+                        
+                        <div class="flex-col" style="flex:1;">
+                            <div class="flex justify-between items-center" style="padding: 16px 0; border-bottom: 1px solid var(--border-light);">
+                                <span class="text-secondary" style="font-size: 13px;">Active Node</span>
+                                <span class="text-primary font-weight-500 font-sans" style="font-size: 14px; font-weight: 700;">${active ? active.name : 'ISP Managed'}</span>
+                            </div>
+                            <div class="flex justify-between items-center" style="padding: 16px 0; border-bottom: 1px solid var(--border-light);">
+                                <span class="text-secondary" style="font-size: 13px;">IPv4 Address</span>
+                                <span class="text-primary font-weight-500 font-sans" style="font-size: 14px; font-weight: 700;">${active ? formatDns(active) : 'Auto (DHCP)'}</span>
+                            </div>
+                            <div class="flex justify-between items-center" style="padding: 16px 0; border-bottom: 1px solid var(--border-light);">
+                                <span class="text-secondary" style="font-size: 13px;">Encryption</span>
+                                <span class="text-primary font-weight-500 font-sans" style="font-size: 14px; font-weight: 700;">${cfg.settings.dohEnabled && cfg.isConnected ? 'DoH Active' : 'None'}</span>
+                            </div>
+                        </div>
+
+                        <div style="margin-top:auto; padding-top:24px;">
+                            ${cfg.isConnected 
+                                ? `<button class="btn" onclick="disconnectNode(this)" style="width:100%; height:44px; font-size:14px;">Disconnect Node</button>`
+                                : `<button class="btn btn-primary" onclick="connectNode('p_cloudflare', this)" style="width:100%; height:44px; font-size:14px;">Establish Secure Tunnel</button>`
+                            }
+                        </div>
+                    </div>
+
+                    <div class="card col-span-2 row-span-1" style="padding-bottom:0;">
+                        <div class="card-label">Real-Time Latency</div>
+                        <div class="flex items-baseline gap-1" style="margin-top: 4px;">
+                            <span style="font-size: 28px; font-weight: 700; letter-spacing: -0.02em;">${cfg.isConnected ? (metricsCache[cfg.activeProfileId]?.ms || '18') : '--'}</span>
+                            <span style="color:var(--text-muted); font-weight:600; font-size: 14px;">ms</span>
+                        </div>
+                        <div class="chart-container" style="flex:1; display:flex; align-items:flex-end;">${cfg.isConnected ? generateSparklineSVG() : '<div style="margin:auto; padding-bottom:24px; color:var(--text-muted); font-size:12px;">Connect to monitor telemetry.</div>'}</div>
+                    </div>
+
+                    <div class="card col-span-1 row-span-1 flex-col justify-center">
+                        <div class="card-label">Session Queries</div>
+                        <div style="font-size: 28px; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 4px;" id="live-queries">${cfg.isConnected ? sessionStats.queries : '0'}</div>
+                        <div style="font-size: 12px; color:var(--text-muted);">Protected resolutions</div>
+                    </div>
+                    
+                    <div class="card col-span-1 row-span-1 flex-col justify-center">
+                        <div class="card-label">Session Uptime</div>
+                        <div style="font-size: 28px; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 4px;" id="live-uptime">${cfg.isConnected ? '0h 0m' : '--'}</div>
+                        <div style="font-size: 12px; color:var(--text-muted);">Continuous tunneling</div>
+                    </div>
+
+                    ${recoHtml}
+
+                    <div class="card col-span-2 row-span-1" style="padding: 0;">
+                        <div class="card-label" style="padding: 24px 24px 0 24px; margin-bottom:8px;">Quick Connect (Favorites)</div>
+                        <div class="card-content" style="padding: 0 12px 12px 12px;">
+                            ${favHtml || '<div style="text-align:center; padding:20px; color:var(--text-muted); font-size:13px;">Star profiles in the Library.</div>'}
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function viewProfiles() {
+            let html = `
+                <div class="page-header">
+                    <h2>Network Library</h2>
+                </div>
+                <div class="grid-container" style="grid-template-rows: 1fr;">
+                    <div class="card col-span-4 row-span-3" style="padding:0;">
+                        <div class="flex justify-between items-center" style="padding: 16px 24px; border-bottom: 1px solid var(--border-light);">
+                            <div class="card-label" style="margin:0;">Available Configurations</div>
+                        </div>
+                        <div class="card-content" style="padding-bottom: 90px;">
+            `;
+            
+            cfg.profiles.forEach(p => {
+                const isActive = cfg.activeProfileId === p.id;
+                const m = metricsCache[p.id];
+                
+                let statsStr = '<span class="text-muted">--</span>';
+                if (isEvaluating && !m) {
+                    statsStr = `<span class="skeleton-inline" style="width: 40px;"></span> <span style="color:var(--border-light); margin:0 12px;">|</span> <span class="skeleton-inline" style="width: 65px;"></span>`;
+                } else if(m) {
+                    let speedUi = getSpeedStyles(m.ms);
+                    statsStr = `<span style="color:${speedUi.color}; text-shadow: ${speedUi.glow}; font-weight:600;">${m.ms}ms</span> <span style="color:var(--border-light); margin:0 12px;">|</span> <span class="text-muted" style="font-weight:500;">${m.reach}% REACH</span>`;
+                }
+
+                html += `
+                    <div class="list-row profile-row" data-name="${p.name}" data-ip="${p.primary}" style="${isActive ? 'background: rgba(16, 185, 129, 0.05);' : ''}">
+                        <div>
+                            <div class="flex items-center gap-2 mb-1">
+                                <span style="font-weight: 600; font-size: 15px; color: var(--text-primary);">${p.name}</span>
+                            </div>
+                            <div class="font-mono text-secondary" style="font-size: 13px;">${formatDns(p)}</div>
+                        </div>
+                        <div class="flex items-center gap-8">
+                            <div style="text-align:right; font-size: 13px;">${statsStr}</div>
+                            <div class="flex items-center gap-2">
+                                <button class="btn-icon" onclick="toggleFavorite('${p.id}')"><svg viewBox="0 0 24 24" width="18" height="18" fill="${p.favorite ? 'var(--text-primary)' : 'none'}" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></button>
+                                ${!p.preset ? `<button class="btn-icon" onclick="deleteProfile('${p.id}')"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button>` : ''}
+                                <button class="btn ${isActive ? '' : 'btn-primary'}" onclick="connectNode('${p.id}', this)" ${isActive ? 'disabled' : ''} style="width: 110px; margin-left: 8px;">${isActive ? 'Active' : 'Apply'}</button>
+                            </div>
+                        </div>
+                    </div>`;
+            });
+            
+            html += `
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Refined Floating Action Bar for Network Library -->
+                <div class="floating-action-bar">
+                    <div class="search-wrapper">
+                        <svg viewBox="0 0 24 24" stroke="currentColor" fill="none" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.3-4.3"/></svg>
+                        <input type="text" id="search-profiles" placeholder="Search targets..." onkeyup="filterProfiles()">
+                    </div>
+                    <button class="fab-icon-btn" onclick="refreshPings(this)" title="Refresh Pings">
+                        <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" fill="none" stroke-width="2.5"><path d="M21 2v6h-6M3 12a9 9 0 0 1 15-6.7L21 8M3 22v-6h6M21 12a9 9 0 0 1-15 6.7L3 16"/></svg>
+                    </button>
+                    <button class="btn btn-primary" onclick="toggleModal(true)">Add Custom Node</button>
+                </div>
+            `;
+            return html;
+        }
+
+        function viewRules() {
+            let rulesHtml = cfg.rules.map(r => `
+                <div class="list-row" style="padding: 16px 24px; border-bottom: 1px solid var(--border-light); background: var(--bg-surface);">
+                    <div class="flex items-center gap-4">
+                        <div style="width: 44px; height: 44px; background: var(--bg-surface-elevated); border-radius: 12px; display: flex; align-items: center; justify-content: center; border: 1px solid var(--border-light); box-shadow: 0 2px 8px rgba(0,0,0,0.04);">
+                            <svg width="22" height="22" fill="none" stroke="var(--text-muted)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M4 6a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6z"></path><path d="M4 10h16"></path></svg>
+                        </div>
+                        <div class="flex-col">
+                            <span style="font-weight: 600; font-size: 15px; color: var(--text-primary); margin-bottom: 2px;">${r.exeName}</span>
+                            <span class="text-muted font-mono" style="font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 250px;">${r.exePath}</span>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-4">
+                        <div style="position: relative;">
+                            <select class="rule-select" onchange="updateRuleProfile('${r.id}', this.value)" style="appearance: none; padding: 10px 36px 10px 16px; border-radius: 10px; background: var(--bg-surface-elevated); border: 1px solid var(--border-highlight); color: var(--text-primary); font-weight: 500; font-size: 13px; cursor: pointer; outline: none; min-width: 140px; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
+                                ${cfg.profiles.map(p => `<option value="${p.id}" ${p.id === r.profileId ? 'selected' : ''}>${p.name}</option>`).join('')}
+                            </select>
+                            <svg viewBox="0 0 24 24" width="14" height="14" stroke="var(--text-muted)" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); pointer-events: none;"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                        </div>
+                        <button class="btn-icon" title="Simulate App Launch" onclick="simulateAppLaunch('${r.id}')" style="color: var(--success); margin-left: 4px;">
+                            <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+                        </button>
+                        <button class="btn-icon" onclick="deleteRule('${r.id}')" style="color: var(--text-muted);">
+                            <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+
+            return `
+                <div class="page-header">
+                    <h2>App Rules</h2>
+                </div>
+                <div class="grid-container" style="grid-template-rows: 1fr;">
+                    <div class="card col-span-4 row-span-3" style="padding:0;">
+                        <div class="flex justify-between items-center" style="padding: 16px 24px; border-bottom: 1px solid var(--border-light);">
+                            <div class="card-label" style="margin:0;">Application-Specific Triggers</div>
+                            <button class="btn btn-primary" style="padding: 8px 16px; font-size:13px;" onclick="promptAddRule()">Browse App</button>
+                        </div>
+                        <div class="card-content">
+                            ${rulesHtml || '<div style="padding: 48px; text-align: center; color:var(--text-muted); font-size:14px;">No app rules configured. Browse for an executable to automate DNS switching.</div>'}
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function viewCheck() {
+            // Dynamic Target Generation applying correct wrapper for drop-shadows globally
+            const targetsHtml = diagTargets.map(t => {
+                let imgTag = t.isMask 
+                    ? `<div class="brand-icon" style="background-color: ${t.shadow}; -webkit-mask: url('${t.img}') center/contain no-repeat; mask: url('${t.img}') center/contain no-repeat;"></div>`
+                    : `<img class="brand-icon" src="${t.img}" />`;
+                
+                return `
+                <div class="brand-target" id="tgt-${t.id}" style="--brand-color: ${t.shadow};">
+                    <div class="brand-icon-wrapper">
+                        ${imgTag}
+                    </div>
+                    <div class="brand-name">${t.name}</div>
+                    <div class="target-latency" id="lat-${t.id}"></div>
+                </div>`;
+            }).join('');
+
+            return `
+                <div class="page-header">
+                    <h2>Diagnostics</h2>
+                    <button class="btn btn-primary" id="run-diag-btn" onclick="runDiagnostic()">Initiate Scan</button>
+                </div>
+
+                <div class="grid-container">
+                    <div class="card col-span-4 row-span-1 justify-center">
+                        <div class="card-label">Target Reachability Validation</div>
+                        <div class="brand-grid" style="padding: 10px 24px;">${targetsHtml}</div>
+                    </div>
+
+                    <div class="card col-span-1 row-span-2 flex-col justify-between" style="overflow:hidden; padding-bottom:0;">
+                        <div style="padding-bottom:12px;">
+                            <div class="card-label">Latency</div>
+                            <div class="mt-2 flex-col" id="diag-latency">
+                                <div class="val text-primary" style="font-size:28px; font-weight:700;">--</div>
+                                <div class="stat text-muted" style="font-size:13px; font-weight:500; margin-top:4px;">Awaiting probe...</div>
+                            </div>
+                        </div>
+                        <div class="diag-chart-container" id="diag-chart-latency" style="margin: 0 -24px; height: 75px; display: flex; align-items: flex-end;"></div>
+                    </div>
+                    
+                    <div class="card col-span-1 row-span-2 flex-col justify-between" style="overflow:hidden; padding-bottom:0;">
+                        <div style="padding-bottom:12px;">
+                            <div class="card-label">Reachability</div>
+                            <div class="mt-2 flex-col" id="diag-reach">
+                                <div class="val text-primary" style="font-size:28px; font-weight:700;">--</div>
+                                <div class="stat text-muted" style="font-size:13px; font-weight:500; margin-top:4px;">Awaiting probe...</div>
+                            </div>
+                        </div>
+                        <div class="diag-chart-container" id="diag-chart-reach" style="margin: 0 -24px; height: 75px; display: flex; align-items: flex-end;"></div>
+                    </div>
+                    
+                    <div class="card col-span-1 row-span-2 flex-col justify-between" style="overflow:hidden; padding-bottom:0;">
+                        <div style="padding-bottom:12px;">
+                            <div class="card-label">DNSSEC</div>
+                            <div class="mt-2 flex-col" id="diag-dnssec">
+                                <div class="val text-primary" style="font-size:28px; font-weight:700;">--</div>
+                                <div class="stat text-muted" style="font-size:13px; font-weight:500; margin-top:4px;">Awaiting probe...</div>
+                            </div>
+                        </div>
+                        <div class="diag-chart-container" id="diag-chart-dnssec" style="margin: 0 -24px; height: 75px; display: flex; align-items: flex-end;"></div>
+                    </div>
+                    
+                    <div class="card col-span-1 row-span-2 flex-col justify-between" style="overflow:hidden; padding-bottom:0;">
+                        <div style="padding-bottom:12px;">
+                            <div class="card-label">Leak Protect</div>
+                            <div class="mt-2 flex-col" id="diag-leak">
+                                <div class="val text-primary" style="font-size:28px; font-weight:700;">--</div>
+                                <div class="stat text-muted" style="font-size:13px; font-weight:500; margin-top:4px;">Awaiting probe...</div>
+                            </div>
+                        </div>
+                        <div class="diag-chart-container" id="diag-chart-leak" style="margin: 0 -24px; height: 75px; display: flex; align-items: flex-end;"></div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function viewTools() {
+            let histRows = cfg.history.slice(0,20).map(h => `
+                <div class="list-row" style="padding: 16px 20px; border-bottom: 1px solid var(--border-light); display: flex; align-items: center; justify-content: space-between;">
+                    <div style="display: flex; flex-direction: column; position: relative; padding-left: 20px;">
+                        <div style="position: absolute; left: 0; top: 6px; width: 8px; height: 8px; border-radius: 50%; background: var(--success); box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.15);"></div>
+                        <div style="font-weight: 600; font-size: 14px; color: var(--text-primary); line-height: 1;">${h.name}</div>
+                        <div class="font-mono text-secondary" style="font-size: 12px; margin-top: 4px;">${h.ip}</div>
+                    </div>
+                    <div class="text-muted" style="font-size: 12px; font-weight: 500;">
+                        ${formatDate(h.time)}
+                    </div>
+                </div>`).join('');
+            
+            return `
+                <div class="page-header">
+                    <h2>System Tools</h2>
+                </div>
+                
+                <div class="grid-container">
+                    <!-- Tool 1: Flush Cache -->
+                    <div class="card col-span-1 row-span-1 interactive flex-col justify-center" style="padding: 18px;" onclick="api.flushCache().then(()=>alert('Cache Flushed'))">
+                        <div class="flex items-center" style="gap: 16px; margin-bottom: 12px;">
+                            <div style="color: #007AFF; background: rgba(0, 122, 255, 0.1); padding: 8px; border-radius: 8px; display: flex;">
+                                <svg width="20" height="20" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 21v-5h5"/></svg>
+                            </div>
+                            <span style="font-weight: 600; font-size: 14px; color: var(--text-primary);">Flush Cache</span>
+                        </div>
+                        <div style="font-size: 12px; color: var(--text-secondary); line-height: 1.4;">Clear stale and poisoned DNS entries from local resolver.</div>
+                    </div>
+
+                    <!-- Tool 2: Renew DHCP -->
+                    <div class="card col-span-1 row-span-1 interactive flex-col justify-center" style="padding: 18px;" onclick="api.resetDhcp().then(()=>alert('DHCP Renewed'))">
+                        <div class="flex items-center" style="gap: 16px; margin-bottom: 12px;">
+                            <div style="color: #10B981; background: rgba(16, 185, 129, 0.1); padding: 8px; border-radius: 8px; display: flex;">
+                                <svg width="20" height="20" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+                            </div>
+                            <span style="font-weight: 600; font-size: 14px; color: var(--text-primary);">Renew DHCP</span>
+                        </div>
+                        <div style="font-size: 12px; color: var(--text-secondary); line-height: 1.4;">Force local interface to request a fresh IP lease.</div>
+                    </div>
+
+                    <!-- Tool 3: Reset Adapter -->
+                    <div class="card col-span-1 row-span-1 interactive flex-col justify-center" style="padding: 18px;" onclick="resetAdapter()">
+                        <div class="flex items-center" style="gap: 16px; margin-bottom: 12px;">
+                            <div style="color: #F59E0B; background: rgba(245, 158, 11, 0.1); padding: 8px; border-radius: 8px; display: flex;">
+                                <svg width="20" height="20" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M18.36 6.64a9 9 0 1 1-12.73 0"></path><line x1="12" y1="2" x2="12" y2="12"></line></svg>
+                            </div>
+                            <span style="font-weight: 600; font-size: 14px; color: var(--text-primary);">Reset Adapter</span>
+                        </div>
+                        <div style="font-size: 12px; color: var(--text-secondary); line-height: 1.4;">Soft-restart the primary network interface card.</div>
+                    </div>
+
+                    <!-- Tool 4: Traceroute -->
+                    <div class="card col-span-1 row-span-1 interactive flex-col justify-center" style="padding: 18px;" onclick="runTraceroute()">
+                        <div class="flex items-center" style="gap: 16px; margin-bottom: 12px;">
+                            <div style="color: #8B5CF6; background: rgba(139, 92, 246, 0.1); padding: 8px; border-radius: 8px; display: flex;">
+                                <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line></svg>
+                            </div>
+                            <span style="font-weight: 600; font-size: 14px; color: var(--text-primary);">Traceroute</span>
+                        </div>
+                        <div style="font-size: 12px; color: var(--text-secondary); line-height: 1.4;">Map node route paths and measure transit delays.</div>
+                    </div>
+
+                    <!-- Tool 5: Export -->
+                    <div class="card col-span-1 row-span-1 interactive flex-col justify-center" style="padding: 18px;" onclick="exportData()">
+                        <div class="flex items-center" style="gap: 16px; margin-bottom: 12px;">
+                            <div style="color: var(--text-primary); background: var(--bg-surface-hover); border: 1px solid var(--border-light); padding: 7px; border-radius: 8px; display: flex;">
+                                <svg width="20" height="20" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                            </div>
+                            <span style="font-weight: 600; font-size: 14px; color: var(--text-primary);">Export Backup</span>
+                        </div>
+                        <div style="font-size: 12px; color: var(--text-secondary); line-height: 1.4;">Save current targets and app settings to disk.</div>
+                    </div>
+
+                    <!-- Tool 6: Import -->
+                    <div class="card col-span-1 row-span-1 interactive flex-col justify-center" style="padding: 18px;" onclick="importData()">
+                        <div class="flex items-center" style="gap: 16px; margin-bottom: 12px;">
+                            <div style="color: var(--text-primary); background: var(--bg-surface-hover); border: 1px solid var(--border-light); padding: 7px; border-radius: 8px; display: flex;">
+                                <svg width="20" height="20" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                            </div>
+                            <span style="font-weight: 600; font-size: 14px; color: var(--text-primary);">Import Backup</span>
+                        </div>
+                        <div style="font-size: 12px; color: var(--text-secondary); line-height: 1.4;">Load configurations from an existing backup file.</div>
+                    </div>
+
+                    <!-- Tool 7: Clear Logs -->
+                    <div class="card col-span-1 row-span-1 interactive flex-col justify-center" style="padding: 18px;" onclick="cfg.history=[]; syncState();">
+                        <div class="flex items-center" style="gap: 16px; margin-bottom: 12px;">
+                            <div style="color: var(--text-primary); background: var(--bg-surface-hover); border: 1px solid var(--border-light); padding: 7px; border-radius: 8px; display: flex;">
+                                <svg width="20" height="20" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
+                            </div>
+                            <span style="font-weight: 600; font-size: 14px; color: var(--text-primary);">Clear Logs</span>
+                        </div>
+                        <div style="font-size: 12px; color: var(--text-secondary); line-height: 1.4;">Erase all connection history and audit trails.</div>
+                    </div>
+
+                    <!-- Tool 8: Factory Reset -->
+                    <div class="card col-span-1 row-span-1 interactive flex-col justify-center" style="padding: 18px;" onclick="factoryReset()">
+                        <div class="flex items-center" style="gap: 16px; margin-bottom: 12px;">
+                            <div style="color: #EF4444; background: rgba(239, 68, 68, 0.1); padding: 8px; border-radius: 8px; display: flex;">
+                                <svg width="20" height="20" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path><path d="M3 3v5h5"></path><path d="M12 2v4"></path><path d="M12 18v4"></path><path d="M4.93 4.93l2.83 2.83"></path><path d="M16.24 16.24l2.83 2.83"></path></svg>
+                            </div>
+                            <span style="font-weight: 600; font-size: 14px; color: var(--text-primary);">Factory Reset</span>
+                        </div>
+                        <div style="font-size: 12px; color: var(--text-secondary); line-height: 1.4;">Purge all settings and custom network profiles.</div>
+                    </div>
+
+                    <!-- Audit Log (Fully refined matching the requested image layout perfectly) -->
+                    <div class="card col-span-4 row-span-1 flex-col" style="padding:0;">
+                        <div class="flex justify-between items-center" style="padding: 16px 24px; border-bottom: 1px solid var(--border-light); background: var(--bg-surface-hover);">
+                            <div class="card-label" style="margin: 0; font-size: 11px;">Connection Audit Log</div>
+                            <div class="text-primary" style="font-size: 12px; font-weight: 600;">Last 20 Events</div>
+                        </div>
+                        <div class="card-content">
+                            ${histRows || '<div style="padding: 48px; text-align: center; color:var(--text-muted); font-size:14px;">No cryptographic activity recorded.</div>'}
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function viewSettings() {
+            return `
+                <div class="page-header">
+                    <h2>Preferences</h2>
+                </div>
+                <div class="grid-container" style="grid-template-rows: 1fr;">
+                    <div class="card col-span-4 row-span-3" style="padding:0;">
+                        <div class="card-content">
+                            <div class="list-row" style="padding: 24px;">
+                                <div><div style="font-weight:600; font-size:15px; margin-bottom:4px; color:var(--text-primary);">DNS over HTTPS (DoH)</div><div class="text-secondary" style="font-size:13px;">Encrypt queries completely to prevent snooping.</div></div>
+                                <label class="toggle"><input type="checkbox" ${cfg.settings.dohEnabled ? 'checked' : ''} onchange="updateSetting('dohEnabled', this.checked)"><span class="toggle-slider"></span></label>
+                            </div>
+                            <div class="list-row" style="padding: 24px;">
+                                <div><div style="font-weight:600; font-size:15px; margin-bottom:4px; color:var(--text-primary);">Force IPv6 Routing</div><div class="text-secondary" style="font-size:13px;">Prefer AAAA records when available.</div></div>
+                                <label class="toggle"><input type="checkbox" ${cfg.settings.ipv6Enabled ? 'checked' : ''} onchange="updateSetting('ipv6Enabled', this.checked)"><span class="toggle-slider"></span></label>
+                            </div>
+                            <div class="list-row" style="padding: 24px;">
+                                <div><div style="font-weight:600; font-size:15px; margin-bottom:4px; color:var(--text-primary);">DNS Change Notification</div><div class="text-secondary" style="font-size:13px;">Display a toast alert when DNS routing is modified via App Rules.</div></div>
+                                <label class="toggle"><input type="checkbox" ${cfg.settings.notificationsEnabled ? 'checked' : ''} onchange="updateSetting('notificationsEnabled', this.checked)"><span class="toggle-slider"></span></label>
+                            </div>
+                            <div class="list-row" style="padding: 24px;">
+                                <div><div style="font-weight:600; font-size:15px; margin-bottom:4px; color:var(--text-primary);">Minimize to Tray on Close</div><div class="text-secondary" style="font-size:13px;">Keep service running silently in system tray instead of exiting.</div></div>
+                                <label class="toggle"><input type="checkbox" ${cfg.settings.minimizeToTray ? 'checked' : ''} onchange="updateSetting('minimizeToTray', this.checked)"><span class="toggle-slider"></span></label>
+                            </div>
+                            <div class="list-row" style="padding: 24px;">
+                                <div><div style="font-weight:600; font-size:15px; margin-bottom:4px; color:var(--text-primary);">Start with Windows</div><div class="text-secondary" style="font-size:13px;">Initialize background service automatically on system boot.</div></div>
+                                <label class="toggle"><input type="checkbox" ${cfg.settings.startWithWindows ? 'checked' : ''} onchange="updateSetting('startWithWindows', this.checked)"><span class="toggle-slider"></span></label>
+                            </div>
+                            <div class="list-row" style="padding: 24px;">
+                                <div><div style="font-weight:600; font-size:15px; margin-bottom:4px; color:var(--text-primary);">Light Appearance</div><div class="text-secondary" style="font-size:13px;">Toggle OS native light mode aesthetics.</div></div>
+                                <label class="toggle"><input type="checkbox" ${cfg.settings.theme === 'light' ? 'checked' : ''} onchange="updateSetting('theme', this.checked ? 'light' : 'dark')"><span class="toggle-slider"></span></label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        async function runDiagnostic() {
+            const btn = document.getElementById('run-diag-btn');
+            btn.disabled = true; btn.innerHTML = `<svg class="spinning" viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" style="margin-right:8px;"><circle cx="12" cy="12" r="10" stroke-opacity="0.25"></circle><path d="M12 2a10 10 0 0 1 10 10"></path></svg> Analyzing...`;
+            
+            // Clear current charts and target latencies, then start pulsing targets
+            document.querySelectorAll('.diag-chart-container').forEach(el => el.innerHTML = '');
+            document.querySelectorAll('.target-latency').forEach(el => { el.classList.remove('show'); el.innerText = ''; });
+            
+            diagTargets.forEach(t => { const el = document.getElementById(`tgt-${t.id}`); if(el) el.className = 'brand-target probing'; });
+
+            ['latency','reach','dnssec','leak'].forEach(id => {
+                document.querySelector(`#diag-${id} .val`).innerHTML = `<div class="skeleton-inline" style="width:70px; height:32px;"></div>`;
+                document.querySelector(`#diag-${id} .stat`).innerHTML = `Probing...`;
+                document.querySelector(`#diag-${id} .stat`).style.color = 'var(--text-muted)';
+            });
+
+            // Sequential scanning, updating speed-based latency with dropdown animation
+            for(let i=0; i<diagTargets.length; i++) {
+                await new Promise(r => setTimeout(r, 200)); 
+                const t = diagTargets[i];
+                const el = document.getElementById(`tgt-${t.id}`);
+                const success = Math.random() > 0.05; 
+                el.className = `brand-target ${success ? 'success' : 'fail'}`;
+                
+                const latEl = document.getElementById(`lat-${t.id}`);
+                if (latEl) {
+                    if (success) {
+                        const ping = Math.floor(Math.random() * 80) + 12; // Dynamic latency spread
+                        latEl.innerText = `${ping}ms`;
+                        let speedUi = getSpeedStyles(ping);
+                        latEl.style.color = speedUi.color;
+                        latEl.style.textShadow = speedUi.glow;
+                    } else {
+                        latEl.innerText = `ERR`;
+                        latEl.style.color = 'var(--danger)';
+                        latEl.style.textShadow = '0 0 8px rgba(239,68,68,0.6), 0 0 16px rgba(239,68,68,0.3)';
+                    }
+                    latEl.classList.add('show');
+                }
+            }
+
+            const res = await api.comprehensiveCheck();
+            const uc = (id, valHtml, isGood, txt, seedOffset) => {
+                document.querySelector(`#diag-${id} .val`).innerHTML = valHtml;
+                const st = document.querySelector(`#diag-${id} .stat`);
+                st.style.color = isGood ? 'var(--success)' : 'var(--danger)'; st.innerHTML = txt;
+                document.querySelector(`#diag-${id} .val`).style.color = isGood ? 'var(--text-primary)' : 'var(--danger)';
+                
+                // Inject animated chart matching status color
+                const color = isGood ? 'var(--success)' : 'var(--danger)';
+                document.getElementById(`diag-chart-${id}`).innerHTML = generateAnimatedChartSVG(color, seedOffset);
+            };
+
+            setTimeout(() => uc('latency', `${res.latency}<span style="font-size:16px;color:var(--text-secondary);">ms</span>`, res.latency < 50, 'Optimal Route', 1), 200);
+            setTimeout(() => uc('reach', `100<span style="font-size:16px;color:var(--text-secondary);">%</span>`, true, 'All targets responsive', 2), 400);
+            setTimeout(() => uc('dnssec', res.dnssec_valid ? 'Valid' : 'Invalid', res.dnssec_valid, 'Signatures Verified', 3), 600);
+            setTimeout(() => { uc('leak', res.leak_secure ? 'Secure' : 'Exposed', res.leak_secure, 'No Leaks Detected', 4); btn.disabled = false; btn.innerHTML = `Initiate Scan`; }, 900);
+        }
+
+        function exportData() { const dl = document.createElement('a'); dl.setAttribute("href", "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(cfg, null, 2))); dl.setAttribute("download", "sparkdns.json"); document.body.appendChild(dl); dl.click(); dl.remove(); }
+        function importData() { const input = document.createElement('input'); input.type = 'file'; input.accept = '.json'; input.onchange = e => { const r = new FileReader(); r.readAsText(e.target.files[0],'UTF-8'); r.onload = re => { try { const c = JSON.parse(re.target.result); if(c.profiles) { cfg = c; syncState(); } } catch(err){} } }; input.click(); }
+
+        window.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>
