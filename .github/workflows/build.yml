@@ -1,4 +1,4 @@
-name: Build & Release
+name: Build and Release
 
 on:
   push:
@@ -46,9 +46,13 @@ jobs:
       - name: Install frontend dependencies
         run: npm install
 
-      - name: Build with tauri-action
+      - name: Build and upload release assets
         uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          releaseId: ${{ github.event.release.id }}
+          tagName: ${{ github.ref_name }}
+          releaseName: SparkDns ${{ github.ref_name }}
+          releaseBody: See the assets below for downloadable installers.
+          releaseDraft: false
+          prerelease: false
