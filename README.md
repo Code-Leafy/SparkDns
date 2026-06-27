@@ -15,7 +15,7 @@ Cross-platform DNS management and optimization desktop app for Windows, Linux, a
 
 <div align="center">
 
-<img src="icon.png" alt="SparkDns Logo" width="120" style="border-radius: 20px;">
+<img src="assets/preview.png" alt="SparkDns Dashboard" width="800" style="border-radius: 12px; border: 1px solid rgba(0,0,0,0.05);">
 
 </div>
 
