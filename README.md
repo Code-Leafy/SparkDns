@@ -31,22 +31,22 @@ SparkDns is a lightweight, native desktop application for managing and optimizin
 
 ### Core Features
 
-#### ⚡ One-Click DNS Switching
+#### One-Click DNS Switching
 Switch between pre-configured DNS providers or create custom profiles with IPv4/IPv6 support.
 
-#### 🔍 Real-Time Diagnostics
+#### Real-Time Diagnostics
 Run comprehensive DNS diagnostics with latency testing, DNSSEC validation, leak detection, and reachability probes against configurable targets.
 
-#### 🛠️ System Tools
+#### System Tools
 Flush DNS cache, renew DHCP, reset network adapters, and run traceroute — all from one panel.
 
-#### 🔄 Auto-Switch
+#### Auto-Switch
 Automatically switch DNS profiles based on network conditions or triggers.
 
-#### 📦 Import/Export
+#### Import/Export
 Backup and restore your DNS configuration with JSON export/import.
 
-#### 🎨 Dark & Light Theme
+#### Dark and Light Theme
 System-aware theme with manual toggle support.
 
 ---
@@ -156,19 +156,19 @@ SparkDns/
 
 | Feature | Windows | Linux | macOS |
 |---------|---------|-------|-------|
-| DNS Switching | ✅ | ✅ | ✅ |
-| DNS Cache Flush | ✅ | ✅ | ✅ |
-| DHCP Renew | ✅ | ✅ (NetworkManager) | ❌ |
-| Adapter Reset | ✅ | ❌ | ❌ |
-| Traceroute | ✅ | ✅ | ✅ |
-| DNS-over-HTTPS | ✅ | ❌ | ✅ |
-| System Tray | ✅ | ✅ | ✅ |
-| Auto-Start | ✅ | ✅ | ✅ |
+| DNS Switching | Yes | Yes | Yes |
+| DNS Cache Flush | Yes | Yes | Yes |
+| DHCP Renew | Yes | Yes (NetworkManager) | No |
+| Adapter Reset | Yes | No | No |
+| Traceroute | Yes | Yes | Yes |
+| DNS-over-HTTPS | Yes | No | Yes |
+| System Tray | Yes | Yes | Yes |
+| Auto-Start | Yes | Yes | Yes |
 
 ---
 
 <details>
-<summary><kbd>❓</kbd> FAQ & Troubleshooting</summary>
+<summary><kbd>FAQ</kbd></summary>
 
 **Why does DNS switching require elevation?**
 Modifying system DNS settings is a privileged operation on all operating systems. SparkDns will prompt for elevation when needed.
@@ -185,7 +185,7 @@ SparkDns configures your system DNS servers. For encrypted DNS, enable DNS-over-
 
 <div align="center">
 
-> **⚠️ Educational Purpose Only:** This project is provided for educational and research purposes. Users are solely responsible for compliance with all local laws.
+> **Educational Purpose Only:** This project is provided for educational and research purposes. Users are solely responsible for compliance with all local laws.
 
 [MIT License](https://github.com/Code-Leafy/SparkDns/blob/main/LICENSE) · Crafted by [Code-Leafy](https://github.com/Code-Leafy)
 
