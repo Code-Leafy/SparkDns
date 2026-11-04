@@ -1,0 +1,33 @@
+[package]
+name = "sparkdns"
+version = "0.1.0"
+description = "Cross-platform DNS management and optimization desktop app"
+authors = ["SparkDns"]
+edition = "2021"
+rust-version = "1.70"
+
+[lib]
+name = "sparkdns_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = ["tray-icon"] }
+tauri-plugin-shell = "2"
+tauri-plugin-dialog = "2"
+tauri-plugin-notification = "2"
+tauri-plugin-fs = "2"
+tauri-plugin-autostart = "2"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+thiserror = "1"
+tokio = { version = "1", features = ["process", "time", "rt", "macros"] }
+hickory-resolver = { version = "0.24", features = ["tokio-runtime"] }
+which = "6"
+directories = "5"
+chrono = { version = "0.4", features = ["serde"] }
+
+[features]
+custom-protocol = ["tauri/custom-protocol"]

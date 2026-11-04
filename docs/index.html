@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SparkDns - Cross-Platform DNS Manager</title>
+<link rel="icon" type="image/png" href="icon.png">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+--bg:#09090b;--card:#131316;--border:#1e1e24;
+--text:#fafafa;--muted:#71717a;--accent:#4ec9b0;--accent2:#3b82f6;
+--gradient:linear-gradient(135deg,#4ec9b0 0%,#3b82f6 100%);
+}
+html{scroll-behavior:smooth}
+body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);overflow-x:hidden;line-height:1.6}
+::selection{background:var(--accent);color:#000}
+
+nav{position:fixed;top:0;width:100%;z-index:100;padding:14px 40px;display:flex;align-items:center;justify-content:space-between;backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);background:rgba(9,9,11,.6);border-bottom:1px solid rgba(255,255,255,.04)}
+.nav-logo{display:flex;align-items:center;gap:10px;font-weight:700;font-size:16px;text-decoration:none;color:var(--text);letter-spacing:-.3px}
+.nav-logo img{width:26px;height:26px;border-radius:6px}
+.nav-links{display:flex;gap:28px;align-items:center}
+.nav-links a{color:var(--muted);text-decoration:none;font-size:13px;transition:color .2s;font-weight:500}
+.nav-links a:hover{color:var(--text)}
+.btn-sm{background:var(--text);color:var(--bg);padding:7px 16px;border-radius:8px;font-weight:600;font-size:13px;text-decoration:none;transition:opacity .2s}
+.btn-sm:hover{opacity:.85}
+
+.hero{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:120px 40px 80px;position:relative}
+.hero-icon{width:72px;height:72px;border-radius:18px;margin-bottom:28px;opacity:0;transform:translateY(16px);animation:fadeUp .6s ease .05s both}
+.hero-badge{display:inline-flex;align-items:center;gap:8px;background:var(--card);border:1px solid var(--border);border-radius:100px;padding:6px 14px;font-size:12px;color:var(--muted);margin-bottom:28px;opacity:0;transform:translateY(16px);animation:fadeUp .6s ease .1s both;font-weight:500}
+.hero-badge .dot{width:5px;height:5px;border-radius:50%;background:var(--accent);animation:pulse 2s infinite}
+.hero h1{font-size:clamp(44px,7vw,72px);font-weight:800;letter-spacing:-2.5px;line-height:1.05;margin-bottom:20px;opacity:0;transform:translateY(16px);animation:fadeUp .6s ease .15s both}
+.hero h1 span{background:var(--gradient);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.hero p{font-size:17px;color:var(--muted);max-width:440px;margin-bottom:36px;opacity:0;transform:translateY(16px);animation:fadeUp .6s ease .2s both;font-weight:400}
+.hero-buttons{display:flex;gap:12px;opacity:0;transform:translateY(16px);animation:fadeUp .6s ease .25s both}
+.btn-primary{background:var(--gradient);color:#000;padding:12px 28px;border-radius:10px;font-weight:700;font-size:15px;text-decoration:none;display:inline-flex;align-items:center;gap:8px;transition:all .2s;border:none;cursor:pointer}
+.btn-primary:hover{transform:translateY(-1px);box-shadow:0 6px 24px rgba(78,201,176,.25)}
+.btn-primary svg{width:18px;height:18px}
+.btn-ghost{background:transparent;border:1px solid var(--border);color:var(--text);padding:12px 28px;border-radius:10px;font-weight:600;font-size:15px;text-decoration:none;display:inline-flex;align-items:center;gap:8px;transition:all .2s}
+.btn-ghost:hover{border-color:#444;transform:translateY(-1px)}
+.btn-ghost svg{width:18px;height:18px}
+.hero-stats{display:flex;gap:40px;margin-top:56px;opacity:0;transform:translateY(16px);animation:fadeUp .6s ease .3s both}
+.stat{text-align:center}
+.stat-num{font-size:28px;font-weight:800;background:var(--gradient);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.stat-label{font-size:12px;color:var(--muted);margin-top:2px;font-weight:500}
+
+.preview{padding:60px 40px 80px;display:flex;justify-content:center}
+.preview-wrap{position:relative;max-width:860px;width:100%}
+.preview-img{width:100%;border-radius:12px;opacity:0;transform:translateY(32px);transition:all .7s cubic-bezier(.16,1,.3,1)}
+.preview-img.visible{opacity:1;transform:translateY(0)}
+
+.features{padding:80px 40px;max-width:1060px;margin:0 auto}
+.section-label{font-size:12px;text-transform:uppercase;letter-spacing:2px;color:var(--accent);font-weight:600;margin-bottom:10px;text-align:center}
+.section-title{font-size:clamp(28px,4vw,40px);font-weight:800;text-align:center;letter-spacing:-1px;margin-bottom:48px}
+.features-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.feature-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:28px;transition:all .25s;opacity:0;transform:translateY(24px)}
+.feature-card.visible{opacity:1;transform:translateY(0)}
+.feature-card:hover{border-color:#2a2a30;transform:translateY(-2px)}
+.feature-icon{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;margin-bottom:16px}
+.feature-icon svg{width:20px;height:20px}
+.fi-green{background:rgba(78,201,176,.08)}
+.fi-blue{background:rgba(59,130,246,.08)}
+.fi-orange{background:rgba(255,107,53,.08)}
+.fi-purple{background:rgba(168,85,247,.08)}
+.fi-pink{background:rgba(236,72,153,.08)}
+.fi-yellow{background:rgba(234,179,8,.08)}
+.feature-card h3{font-size:16px;font-weight:700;margin-bottom:6px;letter-spacing:-.2px}
+.feature-card p{font-size:13px;color:var(--muted);line-height:1.5}
+
+.speed{padding:80px 40px;text-align:center}
+.speed-meter{max-width:400px;margin:0 auto 40px}
+.meter-ring{width:180px;height:180px;border-radius:50%;border:3px solid var(--border);margin:0 auto;position:relative;display:flex;align-items:center;justify-content:center}
+.meter-ring::after{content:'';position:absolute;inset:-3px;border-radius:50%;border:3px solid transparent;border-top-color:var(--accent);border-right-color:var(--accent);animation:spin 2s linear infinite}
+.meter-value{font-size:42px;font-weight:800;background:var(--gradient);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.meter-unit{font-size:13px;color:var(--muted)}
+.speed-features{display:flex;justify-content:center;gap:40px;flex-wrap:wrap}
+.speed-item{text-align:center}
+.speed-item h4{font-size:22px;font-weight:800;color:var(--accent)}
+.speed-item p{font-size:12px;color:var(--muted);margin-top:2px;font-weight:500}
+
+.platforms{padding:80px 40px;max-width:860px;margin:0 auto}
+.platform-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.platform-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:28px;text-align:center;transition:all .25s;opacity:0;transform:translateY(20px)}
+.platform-card.visible{opacity:1;transform:translateY(0)}
+.platform-card:hover{border-color:#2a2a30;transform:translateY(-2px)}
+.platform-card .icon{margin-bottom:14px}
+.platform-card .icon svg{width:32px;height:32px;color:var(--muted)}
+.platform-card h3{font-size:16px;font-weight:700;margin-bottom:2px}
+.platform-card p{font-size:12px;color:var(--muted);margin-bottom:12px}
+.platform-card a{display:inline-block;color:var(--accent);text-decoration:none;font-size:13px;font-weight:600;transition:color .2s}
+.platform-card a:hover{color:var(--text)}
+
+.cta{padding:80px 40px;text-align:center}
+.cta-box{background:var(--card);border:1px solid var(--border);border-radius:20px;padding:56px 40px;max-width:640px;margin:0 auto;position:relative}
+.cta-box h2{font-size:32px;font-weight:800;margin-bottom:12px;letter-spacing:-.5px}
+.cta-box p{color:var(--muted);margin-bottom:28px;font-size:15px}
+
+footer{padding:32px;text-align:center;border-top:1px solid var(--border);color:var(--muted);font-size:12px}
+footer a{color:var(--accent);text-decoration:none}
+
+@keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+@media(max-width:768px){
+nav{padding:12px 20px}
+.nav-links{display:none}
+.features-grid,.platform-grid{grid-template-columns:1fr}
+.hero{padding:100px 20px 60px}
+.hero h1{font-size:36px}
+.hero-stats{gap:20px}
+}
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="#" class="nav-logo">
+    <img src="icon.png" alt="SparkDns">
+    SparkDns
+  </a>
+  <div class="nav-links">
+    <a href="#features">Features</a>
+    <a href="#platforms">Download</a>
+    <a href="https://github.com/Code-Leafy/SparkDns" target="_blank">GitHub</a>
+    <a href="#" class="btn-sm" id="nav-download">Download</a>
+  </div>
+</nav>
+
+<section class="hero">
+  <img src="icon.png" alt="SparkDns" class="hero-icon">
+  <div class="hero-badge"><span class="dot"></span> v1.0 Now Available</div>
+  <h1>Your DNS,<br><span>Your Rules.</span></h1>
+  <p>Switch DNS providers, run diagnostics, and manage your network from one lightweight desktop app.</p>
+  <div class="hero-buttons">
+    <a href="#" class="btn-primary" id="hero-download">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      <span>Download for Your OS</span>
+    </a>
+    <a href="https://github.com/Code-Leafy/SparkDns" class="btn-ghost" target="_blank">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
+      View Source
+    </a>
+  </div>
+  <div class="hero-stats">
+    <div class="stat"><div class="stat-num">10+</div><div class="stat-label">DNS Providers</div></div>
+    <div class="stat"><div class="stat-num">3</div><div class="stat-label">Platforms</div></div>
+    <div class="stat"><div class="stat-num">0</div><div class="stat-label">Data Collected</div></div>
+  </div>
+</section>
+
+<section class="preview">
+  <div class="preview-wrap">
+    <img src="preview.png" alt="SparkDns Dashboard" class="preview-img" id="preview">
+  </div>
+</section>
+
+<section class="features" id="features">
+  <div class="section-label">Features</div>
+  <div class="section-title">Everything You Need</div>
+  <div class="features-grid">
+    <div class="feature-card" data-delay="0">
+      <div class="feature-icon fi-green">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#4ec9b0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+      </div>
+      <h3>One-Click Switching</h3>
+      <p>Switch DNS providers instantly. No terminal, no config files.</p>
+    </div>
+    <div class="feature-card" data-delay="100">
+      <div class="feature-icon fi-blue">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      </div>
+      <h3>Live Diagnostics</h3>
+      <p>Latency testing, DNSSEC validation, leak detection in real time.</p>
+    </div>
+    <div class="feature-card" data-delay="200">
+      <div class="feature-icon fi-orange">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#ff6b35" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"/></svg>
+      </div>
+      <h3>System Tools</h3>
+      <p>Flush cache, renew DHCP, reset adapters, traceroute built in.</p>
+    </div>
+    <div class="feature-card" data-delay="300">
+      <div class="feature-icon fi-purple">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#a855f7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg>
+      </div>
+      <h3>Auto-Switch</h3>
+      <p>Switch profiles automatically based on network conditions.</p>
+    </div>
+    <div class="feature-card" data-delay="400">
+      <div class="feature-icon fi-pink">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#ec4899" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+      </div>
+      <h3>Privacy First</h3>
+      <p>All operations local. Zero telemetry, zero tracking.</p>
+    </div>
+    <div class="feature-card" data-delay="500">
+      <div class="feature-icon fi-yellow">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#eab308" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+      </div>
+      <h3>Dark and Light</h3>
+      <p>System-aware theme with manual toggle.</p>
+    </div>
+  </div>
+</section>
+
+<section class="speed">
+  <div class="section-label">Performance</div>
+  <div class="section-title">Built for Speed</div>
+  <div class="speed-meter">
+    <div class="meter-ring">
+      <div>
+        <div class="meter-value">&lt;1s</div>
+        <div class="meter-unit">DNS Switch</div>
+      </div>
+    </div>
+  </div>
+  <div class="speed-features">
+    <div class="speed-item"><h4>~12MB</h4><p>Installed Size</p></div>
+    <div class="speed-item"><h4>0ms</h4><p>UI Overhead</p></div>
+    <div class="speed-item"><h4>Rust</h4><p>Core Engine</p></div>
+    <div class="speed-item"><h4>Tauri 2</h4><p>Framework</p></div>
+  </div>
+</section>
+
+<section class="platforms" id="platforms">
+  <div class="section-label">Download</div>
+  <div class="section-title">Available Everywhere</div>
+  <div class="platform-grid">
+    <div class="platform-card">
+      <div class="icon">
+        <svg viewBox="0 0 24 24" fill="#71717a"><path d="M0 3.449L9.75 2.1v9.451H0m10.949-9.602L24 0v11.4H10.949M0 12.6h9.75v9.451L0 20.699M10.949 12.6H24V24l-12.9-1.801"/></svg>
+      </div>
+      <h3>Windows</h3>
+      <p>10, 11 - x64</p>
+      <a href="https://github.com/Code-Leafy/SparkDns/releases/download/v1.0.0/SparkDns_0.1.0_x64-setup.exe" target="_blank">Download .exe</a>
+    </div>
+    <div class="platform-card">
+      <div class="icon">
+        <svg viewBox="0 0 24 24" fill="#71717a"><path d="M12.504 0c-.155 0-.315.008-.48.021-4.226.333-3.105 4.807-3.17 6.298-.076 1.092-.3 1.953-1.05 3.02-.885 1.051-2.127 2.75-2.716 4.521-.278.832-.41 1.684-.287 2.489a.424.424 0 0 0-.11.135c-.26.268-.45.6-.663.839-.199.199-.485.267-.797.4-.313.136-.658.269-.864.68-.09.189-.136.394-.132.602 0 .199.027.4.055.536.058.399.116.728.04.97-.249.68-.28 1.145-.106 1.484.174.334.535.47.94.601.81.2 1.91.135 2.774.6.926.466 1.866.67 2.616.47.526-.116.97-.464 1.208-.946.587-.003 1.23-.269 2.26-.334.699-.058 1.574.267 2.577.2.025.134.063.198.114.333l.003.003c.391.778 1.113 1.132 1.884 1.071.771-.06 1.592-.536 2.257-1.306.631-.765 1.683-1.084 2.378-1.503.348-.199.629-.469.649-.853.023-.4-.2-.811-.714-1.376v-.097l-.003-.003c-.17-.2-.25-.535-.338-.926-.085-.401-.182-.786-.492-1.046h-.003c-.059-.054-.123-.067-.188-.135a.357.357 0 0 0-.19-.064c.431-1.278.264-2.55-.173-3.694-.533-1.41-1.465-2.638-2.175-3.483-.796-1.005-1.576-1.957-1.56-3.368.026-2.152.236-6.133-3.544-6.139zm.529 3.405h.013c.213 0 .396.062.584.198.19.135.33.332.438.533.105.259.158.459.166.724 0-.02.006-.04.006-.06v.105a.086.086 0 0 1-.004-.021l-.004-.024a1.807 1.807 0 0 1-.15.706.953.953 0 0 1-.213.335.71.71 0 0 0-.088-.042c-.104-.045-.198-.064-.284-.133a1.312 1.312 0 0 0-.22-.066c.05-.06.146-.133.183-.198.053-.128.082-.264.088-.402v-.02a1.21 1.21 0 0 0-.061-.4c-.045-.134-.101-.2-.183-.333-.084-.066-.167-.132-.267-.132h-.016c-.093 0-.176.03-.262.132a.8.8 0 0 0-.205.334 1.18 1.18 0 0 0-.09.4v.019c.002.089.008.179.02.267-.193-.067-.438-.135-.607-.202a1.635 1.635 0 0 1-.018-.2v-.02a1.772 1.772 0 0 1 .15-.768 1.08 1.08 0 0 1 .43-.533.985.985 0 0 1 .594-.2zm-2.962.059h.036c.142 0 .27.048.399.135.146.129.264.288.344.465.09.199.14.4.153.667v.004c.007.134.006.2-.002.266v.08c-.03.007-.056.018-.083.024-.152.055-.274.135-.393.2.012-.09.013-.18.003-.267v-.015c-.012-.133-.04-.2-.082-.333a.613.613 0 0 0-.166-.267.248.248 0 0 0-.183-.064h-.021c-.071.006-.13.04-.186.132a.552.552 0 0 0-.12.27.944.944 0 0 0-.023.33v.015c.012.135.037.2.08.334.046.134.098.2.166.268.01.009.02.018.034.024-.07.057-.117.07-.176.136a.304.304 0 0 1-.131.068 2.62 2.62 0 0 1-.275-.402 1.772 1.772 0 0 1-.155-.667 1.759 1.759 0 0 1 .08-.668 1.43 1.43 0 0 1 .283-.535c.128-.133.26-.2.418-.2zm1.37 1.706c.332 0 .733.065 1.216.399.293.2.523.269 1.052.468h.003c.255.136.405.266.478.399v-.131a.571.571 0 0 1 .016.47c-.123.31-.516.643-1.063.842v.002c-.268.135-.501.333-.775.465-.276.135-.588.292-1.012.267a1.139 1.139 0 0 1-.448-.067 3.566 3.566 0 0 1-.322-.198c-.195-.135-.363-.332-.612-.465v-.005h-.005c-.4-.246-.616-.512-.686-.71-.07-.268-.005-.47.193-.6.224-.135.38-.271.483-.336.104-.074.143-.102.176-.131h.002v-.003c.169-.202.436-.47.839-.601.139-.036.294-.065.466-.065zm2.8 2.142c.358 1.417 1.196 3.475 1.735 4.473.286.534.855 1.659 1.102 3.024.156-.005.33.018.513.064.646-1.671-.546-3.467-1.089-3.966-.22-.2-.232-.335-.123-.335.59.534 1.365 1.572 1.646 2.757.13.535.16 1.104.021 1.67.067.028.135.06.205.067 1.032.534 1.413.938 1.23 1.537v-.043c-.06-.003-.12 0-.18 0h-.016c.151-.467-.182-.825-1.065-1.224-.915-.4-1.646-.336-1.77.465-.008.043-.013.066-.018.135-.068.023-.139.053-.209.064-.43.268-.662.669-.793 1.187-.13.533-.17 1.156-.205 1.869v.003c-.02.334-.17.838-.319 1.35-1.5 1.072-3.58 1.538-5.348.334a2.645 2.645 0 0 0-.402-.533 1.45 1.45 0 0 0-.275-.333c.182 0 .338-.03.465-.067a.615.615 0 0 0 .314-.334c.108-.267 0-.697-.345-1.163-.345-.467-.931-.995-1.788-1.521-.63-.4-.986-.87-1.15-1.396-.165-.534-.143-1.085-.015-1.645.245-1.07.873-2.11 1.274-2.763.107-.065.037.135-.408.974-.396.751-1.14 2.497-.122 3.854a8.123 8.123 0 0 1 .647-2.876c.564-1.278 1.743-3.504 1.836-5.268.048.036.217.135.289.202.218.133.38.333.59.465.21.201.477.335.876.335.039.003.075.006.11.006.412 0 .73-.134.997-.268.29-.134.52-.334.74-.4h.005c.467-.135.835-.402 1.044-.7zm2.185 8.958c.037.6.343 1.245.882 1.377.588.134 1.434-.333 1.791-.765l.211-.01c.315-.007.577.01.847.268l.003.003c.208.199.305.53.391.876.085.4.154.78.409 1.066.486.527.645.906.636 1.14l.003-.007v.018l-.003-.012c-.015.262-.185.396-.498.595-.63.401-1.746.712-2.457 1.57-.618.737-1.37 1.14-2.036 1.191-.664.053-1.237-.2-1.574-.898l-.005-.003c-.21-.4-.12-1.025.056-1.69.176-.668.428-1.344.463-1.897.037-.714.076-1.335.195-1.814.12-.465.308-.797.641-.984l.045-.022zm-10.814.049h.01c.053 0 .105.005.157.014.376.055.706.333 1.023.752l.91 1.664.003.003c.243.533.754 1.064 1.189 1.637.434.598.77 1.131.729 1.57v.006c-.057.744-.48 1.148-1.125 1.294-.645.135-1.52.002-2.395-.464-.968-.536-2.118-.469-2.857-.602-.369-.066-.61-.2-.723-.4-.11-.2-.113-.602.123-1.23v-.004l.002-.003c.117-.334.03-.752-.027-1.118-.055-.401-.083-.71.043-.94.16-.334.396-.4.69-.533.294-.135.64-.202.915-.47h.002v-.002c.256-.268.445-.601.668-.838.19-.201.38-.336.663-.336zm7.159-9.074c-.435.201-.945.535-1.488.535-.542 0-.97-.267-1.28-.466-.154-.134-.28-.268-.373-.335-.164-.134-.144-.333-.074-.333.109.016.129.134.199.2.096.066.215.2.36.333.292.2.68.467 1.167.467.485 0 1.053-.267 1.398-.466.195-.135.445-.334.648-.467.156-.136.149-.267.279-.267.128.016.034.134-.147.332a8.097 8.097 0 0 1-.69.468zm-1.082-1.583V5.64c-.006-.02.013-.042.029-.05.074-.043.18-.027.26.004.063 0 .16.067.15.135-.006.049-.085.066-.135.066-.055 0-.092-.043-.141-.068-.052-.018-.146-.008-.163-.065zm-.551 0c-.02.058-.113.049-.166.066-.047.025-.086.068-.14.068-.05 0-.13-.02-.136-.068-.01-.066.088-.133.15-.133.08-.031.184-.047.259-.005.019.009.036.03.03.05v.02h.003z"/></svg>
+      </div>
+      <h3>Linux</h3>
+      <p>Debian, Ubuntu, Fedora</p>
+      <a href="https://github.com/Code-Leafy/SparkDns/releases/download/v1.0.0/SparkDns_0.1.0_amd64.deb" target="_blank">Download .deb</a>
+    </div>
+    <div class="platform-card">
+      <div class="icon">
+        <svg viewBox="0 0 24 24" fill="#71717a"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1-3.11z"/></svg>
+      </div>
+      <h3>macOS</h3>
+      <p>Apple Silicon</p>
+      <a href="https://github.com/Code-Leafy/SparkDns/releases/download/v1.0.0/SparkDns_0.1.0_aarch64.dmg" target="_blank">Download .dmg</a>
+    </div>
+  </div>
+</section>
+
+<section class="cta">
+  <div class="cta-box">
+    <h2>Take Control of Your DNS</h2>
+    <p>Free, open-source, and built with privacy in mind.</p>
+    <a href="#" class="btn-primary" id="cta-download" style="display:inline-flex">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      <span>Download SparkDns</span>
+    </a>
+  </div>
+</section>
+
+<footer>
+  Crafted by <a href="https://github.com/Code-Leafy">Code-Leafy</a> &middot; MIT License &middot; Educational Purpose Only
+</footer>
+
+<script>
+const RELEASE_URL = "https://github.com/Code-Leafy/SparkDns/releases/download/v1.0.0";
+const DOWNLOADS = {
+  windows: RELEASE_URL + "/SparkDns_0.1.0_x64-setup.exe",
+  linux: RELEASE_URL + "/SparkDns_0.1.0_amd64.deb",
+  mac: RELEASE_URL + "/SparkDns_0.1.0_aarch64.dmg"
+};
+const OS_LABELS = { windows: "Windows", linux: "Linux", mac: "macOS" };
+
+function detectOS() {
+  const u = navigator.userAgent;
+  if (u.includes("Win")) return "windows";
+  if (u.includes("Mac")) return "mac";
+  if (u.includes("Linux")) return "linux";
+  return "windows";
+}
+
+function getDownloadURL() {
+  return DOWNLOADS[detectOS()];
+}
+
+function getDownloadLabel() {
+  return "Download for " + OS_LABELS[detectOS()];
+}
+
+document.getElementById("hero-download").href = getDownloadURL();
+document.getElementById("hero-download").querySelector("span").textContent = getDownloadLabel();
+document.getElementById("nav-download").href = getDownloadURL();
+document.getElementById("nav-download").textContent = getDownloadLabel();
+document.getElementById("cta-download").href = getDownloadURL();
+document.getElementById("cta-download").querySelector("span").textContent = getDownloadLabel();
+
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(e => {
+    if (e.isIntersecting) {
+      const d = e.target.dataset.delay || 0;
+      setTimeout(() => e.target.classList.add("visible"), d);
+      observer.unobserve(e.target);
+    }
+  });
+}, { threshold: 0.1 });
+document.querySelectorAll(".feature-card, .platform-card, .preview-img").forEach(el => observer.observe(el));
+</script>
+</body>
+</html>
